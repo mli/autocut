@@ -1,9 +1,8 @@
 import argparse
 import datetime
-import sys
+import time
+import os 
 
-# import torch
-# import whisper
 import srt
 from moviepy import editor
 
@@ -39,6 +38,15 @@ def _merge_adjacent_segments(segments, threshold):
         results.append(s) 
     return results
 
+def _check_exists(output, force):
+    if os.path.exists(output):
+        if force:
+            print(f'{output} exists. Will ovewrite it')
+        else:
+            print(f'{output} exists, skipping... Use the --force flag to overwrite')
+            return True
+    return False 
+
 class Transcribe:
     def __init__(self, args):
         self.args = args
@@ -52,16 +60,21 @@ class Transcribe:
 
         for input in self.args.inputs:
             print(f'Transcribing {input}')
+            output = '.'.join(input.split('.')[:-1])+'.srt'
+            if _check_exists(output, self.args.force):
+                continue
+
             audio = whisper.load_audio(input, sr=self.sampling_rate)
             speech_timestamps = self._detect_voice_activity(audio)
             transcribe_results = self._transcibe(audio, speech_timestamps)
-            output = '.'.join(input.split('.')[:-1])+'.srt'
+            
             self._save_srt(output, transcribe_results)
             print(f'Transcribed {input} to {output}')
             
 
     def _detect_voice_activity(self, audio):
         """Detect segments that have voice activities"""
+        tic = time.time()
         if self.vad_model is None or self.detect_speech is None:
             import torch
 
@@ -82,13 +95,14 @@ class Transcribe:
         # speeches = _remove_short_segments(speeches, 1.0 * self.sampling_rate)
 
         # Expand to avoid to tight cut. You can tune the pad length
-
         speeches =  _expand_segments(speeches, 0.2*self.sampling_rate, 
             0.0*self.sampling_rate, audio.shape[0])
         
+        print(f'Done voice activity detetion in {time.time()-tic:.1f} sec')
         return speeches
 
     def _transcibe(self, audio, speech_timestamps):
+        tic = time.time()
         if self.whisper_model is None:
             import whisper             
             self.whisper_model = whisper.load_model(self.args.whisper_model)        
@@ -100,6 +114,7 @@ class Transcribe:
                     task='transcribe', language='zh', initial_prompt=self.args.prompt)
             r['origin_timestamp'] = seg
             res.append(r)
+        print(f'Done transcription in {time.time()-tic:.1f} sec')
         return res
 
     def _save_srt(self, output, transcribe_results):
@@ -135,6 +150,11 @@ class Cutter:
         if video_fn.endswith('.srt'):
             video_fn, srt_fn = srt_fn, video_fn 
         print(f'Cut {video_fn} based on {srt_fn}')
+
+        output_fn = '.'.join(video_fn.split('.')[:-1]) + '_autocut.mp4'
+        if _check_exists(output_fn, self.args.force):
+            return
+
         segments = []
         with open(srt_fn) as f:
             subs = srt.parse(f.read())
@@ -150,10 +170,14 @@ class Cutter:
         #         s['start'], s['end']).crossfadein(fade) for s in segments]
         # final_clip = editor.concatenate_videoclips(clips, padding = -fade)
 
-        clips = [video.subclip(s['start'], s['end']).fx(editor.afx.audio_normalize) for s in segments]
+        clips = [video.subclip(s['start'], s['end']) for s in segments]
         final_clip = editor.concatenate_videoclips(clips)
         print(f'Reduced duration from {video.duration:.1f} to {final_clip.duration:.1f}')
-        output_fn = '.'.join(video_fn.split('.')[:-1]) + '_cut.mp4'
+
+        aud = final_clip.audio.set_fps(44100)
+        final_clip = final_clip.without_audio().set_audio(aud)
+        final_clip = final_clip.fx(editor.afx.audio_normalize)
+        
         # an alterantive to birate is use crf, e.g. ffmpeg_params=['-crf', '18']
         final_clip.write_videofile(output_fn, audio_codec='aac', logger=None, bitrate=self.args.bitrate)
         print(f'Saved video to {output_fn}')
@@ -185,11 +209,13 @@ autocut -t my_video_*.mp4
         action=argparse.BooleanOptionalAction)
     parser.add_argument('--prompt', type=str, default='大家好，', 
         help='initial prompt feed into whisper')
-    parser.add_argument('--whisper-model', type=str, default='large',
+    parser.add_argument('--whisper-model', type=str, default='small',
         choices=['tiny', 'base', 'small', 'medium', 'large'],
         help='The whisper model used to transcribe.')
-    parser.add_argument('--bitrate', type=str, default='1m',        
+    parser.add_argument('--bitrate', type=str, default='1m',
         help='The bitrate to export the cutted video, such as 10m, 1m, or 500k')
+    parser.add_argument('--force', help='Force write even if files exist', 
+        action=argparse.BooleanOptionalAction)
     
     args = parser.parse_args()
 
