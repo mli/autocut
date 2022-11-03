@@ -4,6 +4,7 @@ import os
 requirements = [
     'srt',
     'moviepy',
+    'opencc-python-reimplemented'
 ]
 
 with open(os.path.dirname(__file__)+'/autocut/__init__.py') as f:
