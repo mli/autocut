@@ -6,22 +6,7 @@ from . import utils
 
 def main():
     parser = argparse.ArgumentParser(description='Edit videos based on transcribed subtitles',
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog='''
-Examples:
-
-# Transcribe a video into subtitles
-autocut -t my_video.mp4
-# Delete uncessary sentences in my_video.srt, then
-# generate a new video with only these sentences kept
-autocut -c my_video.mp4 my_video.srt
-
-Note that you can transcribe multiple vidoes at the same time to
-slightly make it faster:
-
-autocut -t my_video_*.mp4
-
-''')
+        formatter_class=argparse.RawDescriptionHelpFormatter)
 
     logging.basicConfig(format='[autocut:%(filename)s:L%(lineno)d] %(levelname)-6s %(message)s')
     logging.getLogger().setLevel(logging.INFO)
@@ -43,7 +28,7 @@ autocut -t my_video_*.mp4
         help='The whisper model used to transcribe.')
     parser.add_argument('--bitrate', type=str, default='10m',
         help='The bitrate to export the cutted video, such as 10m, 1m, or 500k')
-    parser.add_argument('--vad', help='If or not use VAD', default=True,
+    parser.add_argument('--vad', help='If or not use VAD',
         action=argparse.BooleanOptionalAction)
     parser.add_argument('--force', help='Force write even if files exist',
         action=argparse.BooleanOptionalAction)
