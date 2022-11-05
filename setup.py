@@ -1,10 +1,11 @@
 from setuptools import setup, find_packages
-import os 
+import os
 
 requirements = [
     'srt',
     'moviepy',
-    'opencc-python-reimplemented'
+    'opencc-python-reimplemented',
+    'whisper @ git+https://github.com/openai/whisper.git'
 ]
 
 with open(os.path.dirname(__file__)+'/autocut/__init__.py') as f:
@@ -17,7 +18,6 @@ setup(
     name='autocut',
     version=__version__,
     install_requires=requirements,
-    setup_requires=['sphinx>=2.2.1'],
     python_requires='>=3.8',
     packages=find_packages(),
     entry_points={

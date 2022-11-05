@@ -38,6 +38,8 @@ class Transcribe:
 
     def _detect_voice_activity(self, audio):
         """Detect segments that have voice activities"""
+        if not self.args.vad:
+            return [{'start': 0, 'end':len(audio)}]
         tic = time.time()
         if self.vad_model is None or self.detect_speech is None:
             self.vad_model, funcs = torch.hub.load(
@@ -54,7 +56,7 @@ class Transcribe:
         # speeches = _merge_adjacent_segments(speeches, 0.5 * self.sampling_rate)
 
         # Remove too short segments
-        # speeches = _remove_short_segments(speeches, 1.0 * self.sampling_rate)
+        speeches = utils.remove_short_segments(speeches, 10.0 * self.sampling_rate)
 
         # Expand to avoid to tight cut. You can tune the pad length
         speeches =  utils.expand_segments(speeches, 0.2*self.sampling_rate,
@@ -69,10 +71,11 @@ class Transcribe:
             self.whisper_model = whisper.load_model(self.args.whisper_model)
 
         res = []
+        # TODO, a better way is merging these segments into a single one, so whisper can get more context
         for seg in speech_timestamps:
             r = self.whisper_model.transcribe(
                     audio[int(seg['start']):int(seg['end'])],
-                    task='transcribe', language='zh')#, initial_prompt=self.args.prompt)
+                    task='transcribe', language='zh', initial_prompt=self.args.prompt)
             r['origin_timestamp'] = seg
             res.append(r)
         logging.info(f'Done transcription in {time.time()-tic:.1f} sec')

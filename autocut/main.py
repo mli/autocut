@@ -43,6 +43,8 @@ autocut -t my_video_*.mp4
         help='The whisper model used to transcribe.')
     parser.add_argument('--bitrate', type=str, default='10m',
         help='The bitrate to export the cutted video, such as 10m, 1m, or 500k')
+    parser.add_argument('--vad', help='If or not use VAD', default=True,
+        action=argparse.BooleanOptionalAction)
     parser.add_argument('--force', help='Force write even if files exist',
         action=argparse.BooleanOptionalAction)
 

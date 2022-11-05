@@ -5,8 +5,6 @@ import os
 import re
 import time
 
-# from .transcribe import Transcribe
-# from .cut import Cutter
 from . import cut, transcribe, utils
 
 
