@@ -14,7 +14,7 @@ class Merger:
         self.args = args
 
     def write_md(self, videos):
-        md = utils.MD(self.args.inputs[0])
+        md = utils.MD(self.args.inputs[0], self.args.encoding)
         num_tasks = len(md.tasks())
         # Not overwrite if already marked as down or no new videos
         if md.done_editing() or num_tasks == len(videos) + 1:
@@ -26,7 +26,7 @@ class Merger:
         base = lambda fn: os.path.basename(fn)
         for f in videos:
             md_fn = utils.change_ext(f, 'md')
-            video_md = utils.MD(md_fn)
+            video_md = utils.MD(md_fn, self.args.encoding)
             # select a few workds to scribe the video
             desc = ''
             if len(video_md.tasks()) > 1:
@@ -40,7 +40,7 @@ class Merger:
 
     def run(self):
         md_fn = self.args.inputs[0]
-        md = utils.MD(md_fn)
+        md = utils.MD(md_fn, self.args.encoding)
         if not md.done_editing():
             return
 
@@ -80,11 +80,11 @@ class Cutter:
         if utils.check_exists(output_fn, self.args.force):
             return
 
-        with open(fns['srt']) as f:
+        with open(fns['srt'], encoding=self.args.encoding) as f:
             subs = list(srt.parse(f.read()))
 
         if fns['md']:
-            md = utils.MD(fns['md'])
+            md = utils.MD(fns['md'], self.args.encoding)
             if not md.done_editing():
                 return
             index = []

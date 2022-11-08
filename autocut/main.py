@@ -32,7 +32,8 @@ def main():
         action=argparse.BooleanOptionalAction)
     parser.add_argument('--force', help='Force write even if files exist',
         action=argparse.BooleanOptionalAction)
-
+    parser.add_argument('--encoding', type=str, default='utf-8',
+        help='Document encoding format')
 
     args = parser.parse_args()
 
@@ -46,7 +47,7 @@ def main():
         from .daemon import Daemon
         Daemon(args).run()
     elif args.s:
-        utils.compact_rst(args.inputs[0])
+        utils.compact_rst(args.inputs[0], args.encoding)
     else:
         logging.warn('No action, use -c, -t or -d')
 

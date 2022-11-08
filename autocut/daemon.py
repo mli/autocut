@@ -44,7 +44,7 @@ class Daemon:
             if md_fn in files:
                 if utils.add_cut(md_fn) in files:
                     continue
-                md = utils.MD(md_fn)
+                md = utils.MD(md_fn, self.args.encoding)
                 if not md.done_editing():
                     continue
                 args.inputs = [f, md_fn, srt_fn]

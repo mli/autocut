@@ -24,20 +24,21 @@ def add_cut(filename):
 
 # a very simple markdown parser
 class MD:
-    def __init__(self, filename) -> None:
+    def __init__(self, filename, encoding) -> None:
         self.lines = []
         self.EDIT_DONE_MAKR = '<-- Mark if you are done editing.'
         self.filename = filename
+        self.encoding = encoding
         if os.path.exists(filename):
-            with open(filename) as f:
+            with open(filename, encoding=self.encoding) as f:
                 self.lines = f.readlines()
 
     def clear(self):
         self.lines = []
 
     def write(self):
-        with open(self.filename, 'w') as f:
-            f.write('\n'.join(self.lines))
+        with open(self.filename, 'wb') as f:
+            f.write('\n'.join(self.lines).encode(self.encoding))
 
     def tasks(self):
         # get all tasks with their status
@@ -115,7 +116,7 @@ def merge_adjacent_segments(segments, threshold):
         results.append(s)
     return results
 
-def compact_rst(sub_fn):
+def compact_rst(sub_fn, encoding):
     cc = opencc.OpenCC('t2s')
 
     base, ext = os.path.splitext(sub_fn)
@@ -125,7 +126,7 @@ def compact_rst(sub_fn):
 
     if base.endswith(COMPACT):
         # to original rst
-        with open(sub_fn) as f:
+        with open(sub_fn, encoding=encoding) as f:
             lines = f.readlines()
         subs = []
         for l in lines:
@@ -135,12 +136,12 @@ def compact_rst(sub_fn):
                 start=srt.srt_timestamp_to_timedelta(items[0]),
                 end=srt.srt_timestamp_to_timedelta(items[2]),
                 content=' '.join(items[3:])))
-        with open(base[:-len(COMPACT)]+ext, 'w') as f:
-            f.write(srt.compose(subs))
+        with open(base[:-len(COMPACT)]+ext, 'wb') as f:
+            f.write(srt.compose(subs).encode(encoding))
     else:
         # to a compact version
-        with open(sub_fn) as f:
+        with open(sub_fn, encoding=encoding) as f:
             subs = srt.parse(f.read())
-        with open(base+COMPACT+ext, 'w') as f:
+        with open(base+COMPACT+ext, 'wb') as f:
             for s in subs:
-                f.write(f'{srt.timedelta_to_srt_timestamp(s.start)} --> {srt.timedelta_to_srt_timestamp(s.end)} {cc.convert(s.content.strip())}\n')
+                f.write(f'{srt.timedelta_to_srt_timestamp(s.start)} --> {srt.timedelta_to_srt_timestamp(s.end)} {cc.convert(s.content.strip())}\n'.encode(encoding))
