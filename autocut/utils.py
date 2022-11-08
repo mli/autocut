@@ -73,7 +73,7 @@ class MD:
         m = re.match(r'- +\[([ x])\] +(.*)', line)
         if not m:
             return (None, line)
-        return (m.groups()[0] == 'x', m.groups()[1])
+        return (m.groups()[0].lower() == 'x', m.groups()[1])
 
 def check_exists(output, force):
     if os.path.exists(output):
