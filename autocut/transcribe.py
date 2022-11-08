@@ -107,13 +107,13 @@ class Transcribe:
                 prev_end = end
 
         with open(output, 'wb') as f:
-            f.write(srt.compose(subs).encode('utf-8'))
+            f.write(srt.compose(subs).encode(self.args.encoding))
 
     def _save_md(self, md_fn, srt_fn, video_fn):
-        with open(srt_fn, encoding='utf-8') as f:
+        with open(srt_fn, encoding=self.args.encoding) as f:
             subs = srt.parse(f.read())
 
-        md = utils.MD(md_fn)
+        md = utils.MD(md_fn, self.args.encoding)
         md.add_done_edditing(False)
         md.add_video(os.path.basename(video_fn))
         md.add(f'\nTexts generated from [{os.path.basename(srt_fn)}]({os.path.basename(srt_fn)}).'
