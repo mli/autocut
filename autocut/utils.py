@@ -36,8 +36,8 @@ class MD:
         self.lines = []
 
     def write(self):
-        with open(self.filename, 'w') as f:
-            f.write('\n'.join(self.lines))
+        with open(self.filename, 'wb') as f:
+            f.write('\n'.join(self.lines).encode('utf-8'))
 
     def tasks(self):
         # get all tasks with their status
