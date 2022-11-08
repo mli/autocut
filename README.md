@@ -48,7 +48,7 @@ scoop install ffmpeg
 
 ## 更多使用选项
 
-转录某个视频生成`.srt`和`.md`结果。
+### 转录某个视频生成`.srt`和`.md`结果。
 
 ```bash
 autocut -t 22-52-00.mp4
@@ -65,27 +65,17 @@ autocut -t 22-52-00.mp4
 2. 如果你视频中有较多的长停顿，可以用`--vad`来使用格外的VAD模型预先识别这些停顿，使得对时间戳识别更准确。
 
 
-剪切某个视频
+### 剪切某个视频
 
 ```bash
 autocut -c 22-52-00.mp4 22-52-00.srt 22-52-00.md
 ```
 
 1. 默认视频比特率是 `10m`，你可以更加需要调大调小。
-2. 如果不习惯Markdown文件，你也可以直接在`srt`文件里删除不要的句子，在剪切时不传入`md`文件名即可。就是 `autocut -t 22-52-00.mp4 22-52-00.srt`
+2. 如果不习惯Markdown文件，你也可以直接在`srt`文件里删除不要的句子，在剪切时不传入`md`文件名即可。就是 `autocut -s 22-52-00.mp4 22-52-00.srt`
 
-指定文本编码格式
 
-文本编码格式默认为`utf-8`，可以通过`--encoding`指定其他编码格式。但是需要注意**生成字幕文件和使用字幕文件剪辑时的编码格式需要一致**。
-```bash
-autocut -t test.mp4 --encoding=gbk
-```
-
-```bash
-autocut -c test.mov test.srt test.md --encoding=gbk
-```
-
-一些小提示
+### 一些小提示
 
 
 1. 讲得流利的视频的转录质量会高一些，这因为是Whisper训练数据分布的缘故。对一个视频，你可以先粗选一下句子，然后在剪出来的视频上再剪一次。
@@ -98,4 +88,11 @@ autocut -c test.mov test.srt test.md --encoding=gbk
 
 4. 视频是通过ffmpeg导出。在Apple M1芯片上它用不了GPU，导致导出速度不如专业视频软件。
 
-5. 如果使用了其他编码格式（如gbk等）生成md文件并用Typora打开后，该文件可能会被Typora自动转码为其他编码格式，此时再通过生成时指定的编码格式进行剪辑时可能会出现编码不支持等报错。因此可以在使用Typora编辑后再通过VS Code等修改到你需要的编码格式进行保存后再使用剪辑功能。
+5. 默认输出编码是 `utf-8`. 你可以通过`--encoding`指定其他编码格式。但是需要注意生成字幕文件和使用字幕文件剪辑时的编码格式需要一致。例如使用 `gbk`.
+
+    ```bash
+    autocut -t test.mp4 --encoding=gbk
+    autocut -c test.mov test.srt test.md --encoding=gbk
+    ```
+
+    如果使用了其他编码格式（如gbk等）生成md文件并用Typora打开后，该文件可能会被Typora自动转码为其他编码格式，此时再通过生成时指定的编码格式进行剪辑时可能会出现编码不支持等报错。因此可以在使用Typora编辑后再通过VS Code等修改到你需要的编码格式进行保存后再使用剪辑功能。
