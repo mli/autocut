@@ -135,7 +135,7 @@ def compact_rst(sub_fn, encoding):
             subs.append(srt.Subtitle(index=0,
                 start=srt.srt_timestamp_to_timedelta(items[0]),
                 end=srt.srt_timestamp_to_timedelta(items[2]),
-                content=' '.join(items[3:])))
+                content=' '.join(items[3:]).strip()))
         with open(base[:-len(COMPACT)]+ext, 'wb') as f:
             f.write(srt.compose(subs).encode(encoding))
     else:
