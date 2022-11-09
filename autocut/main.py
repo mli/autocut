@@ -21,6 +21,9 @@ def main():
         action=argparse.BooleanOptionalAction)
     parser.add_argument('-s', help='Convert .srt to a compact format for easier editting',
         action=argparse.BooleanOptionalAction)
+    parser.add_argument('-l', '--lang', type=str, default='zh',
+        choices=['zh', 'en'],
+        help='Language to use for transcribing')
     parser.add_argument('--prompt', type=str, default='',
         help='initial prompt feed into whisper')
     parser.add_argument('--whisper-model', type=str, default='small',

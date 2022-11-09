@@ -75,7 +75,7 @@ class Transcribe:
         for seg in speech_timestamps:
             r = self.whisper_model.transcribe(
                     audio[int(seg['start']):int(seg['end'])],
-                    task='transcribe', language='zh', initial_prompt=self.args.prompt)
+                    task='transcribe', language=self.args.lang, initial_prompt=self.args.prompt)
             r['origin_timestamp'] = seg
             res.append(r)
         logging.info(f'Done transcription in {time.time()-tic:.1f} sec')
