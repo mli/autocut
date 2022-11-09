@@ -107,7 +107,7 @@ class Transcribe:
                 prev_end = end
 
         with open(output, 'wb') as f:
-            f.write(srt.compose(subs).encode(self.args.encoding))
+            f.write(srt.compose(subs).encode(self.args.encoding, 'replace'))
 
     def _save_md(self, md_fn, srt_fn, video_fn):
         with open(srt_fn, encoding=self.args.encoding) as f:
