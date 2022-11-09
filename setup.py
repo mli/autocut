@@ -8,7 +8,7 @@ requirements = [
     'whisper @ git+https://github.com/openai/whisper.git'
 ]
 
-init_fn = os.path.join(os.path.dirname(__file__), 'autcut', '__init__.py')
+init_fn = os.path.join(os.path.dirname(__file__), 'autocut', '__init__.py')
 with open(init_fn) as f:
     for l in f.readlines():
         if '__version__' in l:
