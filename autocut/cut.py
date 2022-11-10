@@ -77,11 +77,7 @@ class Cutter:
         assert fns['srt'], 'must provide a srt filename'
 
         output_fn = utils.change_ext(utils.add_cut(fns['video']), 'mp4')
-        base, ext = os.path.splitext(fns['srt'])
-        srt_output_fn = base + ext.split(".")[0] + "_cut" + ".srt"
         if utils.check_exists(output_fn, self.args.force):
-            return
-        if utils.check_exists(srt_output_fn, self.args.force):
             return
 
         with open(fns['srt'], encoding=self.args.encoding) as f:
@@ -92,21 +88,13 @@ class Cutter:
             if not md.done_editing():
                 return
             index = []
-            new_content = {}
             for mark, sent in md.tasks():
                 if not mark:
                     continue
                 m = re.match(r'\[(\d+)', sent.strip())
                 if m:
-                    tag = int(m.groups()[0])
-                    md_content = sent.split()
-                    md_content.pop(0)
-                    index.append(tag)
-                    new_content[tag] = ''.join(md_content)
+                    index.append(int(m.groups()[0]))
             subs = [s for s in subs if s.index in index]
-            if self.args.overwrite_srt:
-                for s in subs:
-                    s.content = new_content[s.index]
             logging.info(f'Cut {fns["video"]} based on {fns["srt"]} and {fns["md"]}')
         else:
             logging.info(f'Cut {fns["video"]} based on {fns["srt"]}')
@@ -137,7 +125,3 @@ class Cutter:
         # an alterantive to birate is use crf, e.g. ffmpeg_params=['-crf', '18']
         final_clip.write_videofile(output_fn, audio_codec='aac', bitrate=self.args.bitrate)
         logging.info(f'Saved video to {output_fn}')
-
-        # format srt and generate new srt
-        utils.refactor_srt(subs, srt_output_fn, self.args.encoding)
-        logging.info(f'Saved refactored srt to {srt_output_fn}')

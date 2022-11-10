@@ -187,11 +187,3 @@ def trans_srt_to_md(encoding, srt_fn, video_fn=None):
         pre = f'[{s.index},{sec // 60:02d}:{sec % 60:02d}]'
         md.add_task(False, f'{pre:11} {s.content.strip()}')
     md.write()
-
-
-def refactor_srt(subs, srt_fn, encoding):
-    new_subs = subs[:]
-    for i in range(len(new_subs)):
-        new_subs[i].index = i + 1
-    with open(srt_fn, 'wb') as f:
-        f.write(srt.compose(subs).encode(encoding, 'replace'))

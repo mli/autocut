@@ -27,8 +27,6 @@ def main():
     parser.add_argument('--lang', type=str, default='zh',
                         choices=['zh', 'en'],
                         help='The output language of transcription')
-    parser.add_argument('--overwrite-srt', help='Generate srt according to md content when cutting video',
-                        action=argparse.BooleanOptionalAction)
     parser.add_argument('--prompt', type=str, default='',
                         help='initial prompt feed into whisper')
     parser.add_argument('--whisper-model', type=str, default='small',
