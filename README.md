@@ -96,3 +96,17 @@ autocut -c 22-52-00.mp4 22-52-00.srt 22-52-00.md
     ```
 
     如果使用了其他编码格式（如gbk等）生成md文件并用Typora打开后，该文件可能会被Typora自动转码为其他编码格式，此时再通过生成时指定的编码格式进行剪辑时可能会出现编码不支持等报错。因此可以在使用Typora编辑后再通过VS Code等修改到你需要的编码格式进行保存后再使用剪辑功能。
+
+6. 当你有Nvidia GPU，而且安装了对应版本的Pytorch的时候，转录是在GPU上进行。你可以通过命令来查看当前是不是支持GPU。
+
+   ```bash
+   python -c "import torch; print(torch.cuda.is_available())"
+   ```
+
+   否则你可以在安装autocut前手动安装对应的GPU版本Pytorch。
+
+   GPU通常带来加速。但whisper的大模型需要一定的GPU显存，如果你的显存不够，但又想用大模型，可以通过`--device`来强制使用`cpu`。例如
+
+   ```bash
+   autocut -t 11-28-18.mp4 --whisper-model large --device cpu
+   ```
