@@ -68,7 +68,7 @@ class Transcribe:
     def _transcibe(self, audio, speech_timestamps):
         tic = time.time()
         if self.whisper_model is None:
-            self.whisper_model = whisper.load_model(self.args.whisper_model)
+            self.whisper_model = whisper.load_model(self.args.whisper_model, self.args.device)
 
         res = []
         # TODO, a better way is merging these segments into a single one, so whisper can get more context
