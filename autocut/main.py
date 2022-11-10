@@ -37,7 +37,7 @@ def main():
         action=argparse.BooleanOptionalAction)
     parser.add_argument('--encoding', type=str, default='utf-8',
         help='Document encoding format')
-    parser.add_argument('--device', type=str, default='None',
+    parser.add_argument('--device', type=str, default=None,
         choices=['cpu', 'cuda'],
         help='cpu or cuda')
 
