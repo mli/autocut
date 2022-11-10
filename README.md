@@ -118,3 +118,8 @@ autocut -c 22-52-00.mp4 22-52-00.srt 22-52-00.md
    ```bash
    autocut -t 11-28-18.mp4 --whisper-model large --device cpu
    ```
+
+1. **能不能直接用 `pip install autocut` 安装?**
+
+   因为autocut的依赖whisper没有发布pypi包，所以目前只能用 `pip install git+https://github.com/mli/autocut.git` 这种方式发布。有需求的同学可以查看whisper模型是不是能直接在 huggingface hub 下载，从而摆脱whisper包的依赖。
+
