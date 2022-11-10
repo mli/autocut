@@ -80,10 +80,6 @@ autocut -c 22-52-00.mp4 22-52-00.srt 22-52-00.md
    autocut -g test.mp4 test.srt # 支持视频和字幕乱序传入
    autocut -g test.srt # 也可以只传入字幕文件
    ```
-4. 如果提供了`md`文件，则会根据`md`文件进行剪辑；此时如果使用额外添加参数`--overwrite-srt`，则会使用`md`内容覆盖生成新的`srt`文件（原来的不会被删除）以保证在`md`中的修改会被同步。
-   ```bash
-   autocut -c 22-52-00.mp4 22-52-00.srt 22-52-00.md --overwrite-srt # 仅在提供 md 文件时会生效
-   ```
 
 
 ### 一些小提示
