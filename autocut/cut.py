@@ -54,12 +54,13 @@ class Merger:
             videos.append(editor.VideoFileClip(fn))
 
         dur = sum([v.duration for v in videos])
-        logging.info(f'Merging into a video with {dur/60:.1f} min length')
+        logging.info(f'Merging into a video with {dur / 60:.1f} min length')
 
         merged = editor.concatenate_videoclips(videos)
         fn = os.path.splitext(md_fn)[0] + '_merged.mp4'
-        merged.write_videofile(fn, audio_codec='aac',  bitrate=self.args.bitrate) #logger=None,
+        merged.write_videofile(fn, audio_codec='aac', bitrate=self.args.bitrate)  # logger=None,
         logging.info(f'Saved merged video to {fn}')
+
 
 # Cut videos
 class Cutter:
@@ -67,7 +68,7 @@ class Cutter:
         self.args = args
 
     def run(self):
-        fns = {'srt':None, 'video':None, 'md':None}
+        fns = {'srt': None, 'video': None, 'md': None}
         for fn in self.args.inputs:
             ext = os.path.splitext(fn)[1][1:]
             fns[ext if ext in fns else 'video'] = fn
@@ -75,9 +76,12 @@ class Cutter:
         assert fns['video'], 'must provide a video filename'
         assert fns['srt'], 'must provide a srt filename'
 
-
         output_fn = utils.change_ext(utils.add_cut(fns['video']), 'mp4')
+        base, ext = os.path.splitext(fns['srt'])
+        srt_output_fn = base + ext.split(".")[0] + "_cut" + ".srt"
         if utils.check_exists(output_fn, self.args.force):
+            return
+        if utils.check_exists(srt_output_fn, self.args.force):
             return
 
         with open(fns['srt'], encoding=self.args.encoding) as f:
@@ -88,19 +92,30 @@ class Cutter:
             if not md.done_editing():
                 return
             index = []
+            new_content = {}
             for mark, sent in md.tasks():
-                if not mark: continue
+                if not mark:
+                    continue
                 m = re.match(r'\[(\d+)', sent.strip())
                 if m:
-                    index.append(int(m.groups()[0]))
+                    tag = int(m.groups()[0])
+                    md_content = sent.split()
+                    md_content.pop(0)
+                    index.append(tag)
+                    new_content[tag] = ''.join(md_content)
             subs = [s for s in subs if s.index in index]
+            if self.args.overwrite_srt:
+                for s in subs:
+                    s.content = new_content[s.index]
             logging.info(f'Cut {fns["video"]} based on {fns["srt"]} and {fns["md"]}')
         else:
             logging.info(f'Cut {fns["video"]} based on {fns["srt"]}')
 
         segments = []
+        # Avoid disordered subtitles
+        subs.sort(key=lambda x: x.start)
         for x in subs:
-            segments.append({'start':x.start.total_seconds(), 'end':x.end.total_seconds()})
+            segments.append({'start': x.start.total_seconds(), 'end': x.end.total_seconds()})
 
         video = editor.VideoFileClip(fns['video'])
 
@@ -122,3 +137,7 @@ class Cutter:
         # an alterantive to birate is use crf, e.g. ffmpeg_params=['-crf', '18']
         final_clip.write_videofile(output_fn, audio_codec='aac', bitrate=self.args.bitrate)
         logging.info(f'Saved video to {output_fn}')
+
+        # format srt and generate new srt
+        utils.refactor_srt(subs, srt_output_fn, self.args.encoding)
+        logging.info(f'Saved refactored srt to {srt_output_fn}')
