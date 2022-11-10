@@ -73,6 +73,12 @@ autocut -c 22-52-00.mp4 22-52-00.srt 22-52-00.md
 
 1. 默认视频比特率是 `10m`，你可以更加需要调大调小。
 2. 如果不习惯Markdown文件，你也可以直接在`srt`文件里删除不要的句子，在剪切时不传入`md`文件名即可。就是 `autocut -c 22-52-00.mp4 22-52-00.srt`
+3. 如果仅有`srt`文件，编辑不方便可以使用如下命令生成`md`文件，然后编辑`md`文件即可，但此时会完全对照`srt`生成，不会出现`no speech`等提示文本。
+   ```bash
+   autocut -g test.srt test.mp4
+   autocut -g test.mp4 test.srt # 支持视频和字幕乱序传入
+   autocut -g test.srt # 也可以只传入字幕文件
+   ```
 
 
 ### 一些小提示
