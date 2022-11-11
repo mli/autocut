@@ -18,7 +18,7 @@ class Daemon:
         while True:
             self._iter()
             time.sleep(self.sleep)
-            self.sleep = min(60, self.sleep+1)
+            self.sleep = min(60, self.sleep + 1)
 
     def _is_video(self, filename):
         _, ext = os.path.splitext(filename)

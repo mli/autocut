@@ -54,12 +54,13 @@ class Merger:
             videos.append(editor.VideoFileClip(fn))
 
         dur = sum([v.duration for v in videos])
-        logging.info(f'Merging into a video with {dur/60:.1f} min length')
+        logging.info(f'Merging into a video with {dur / 60:.1f} min length')
 
         merged = editor.concatenate_videoclips(videos)
         fn = os.path.splitext(md_fn)[0] + '_merged.mp4'
-        merged.write_videofile(fn, audio_codec='aac',  bitrate=self.args.bitrate) #logger=None,
+        merged.write_videofile(fn, audio_codec='aac', bitrate=self.args.bitrate)  # logger=None,
         logging.info(f'Saved merged video to {fn}')
+
 
 # Cut videos
 class Cutter:
@@ -67,14 +68,13 @@ class Cutter:
         self.args = args
 
     def run(self):
-        fns = {'srt':None, 'video':None, 'md':None}
+        fns = {'srt': None, 'video': None, 'md': None}
         for fn in self.args.inputs:
             ext = os.path.splitext(fn)[1][1:]
             fns[ext if ext in fns else 'video'] = fn
 
         assert fns['video'], 'must provide a video filename'
         assert fns['srt'], 'must provide a srt filename'
-
 
         output_fn = utils.change_ext(utils.add_cut(fns['video']), 'mp4')
         if utils.check_exists(output_fn, self.args.force):
@@ -100,7 +100,7 @@ class Cutter:
 
         segments = []
         for x in subs:
-            segments.append({'start':x.start.total_seconds(), 'end':x.end.total_seconds()})
+            segments.append({'start': x.start.total_seconds(), 'end': x.end.total_seconds()})
 
         video = editor.VideoFileClip(fns['video'])
 
