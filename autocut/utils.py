@@ -163,16 +163,19 @@ def compact_rst(sub_fn, encoding):
                         encoding, 'replace'))
 
 
-def trans_srt_to_md(encoding, srt_fn, video_fn=None):
+def trans_srt_to_md(encoding, force, srt_fn, video_fn=None):
     base, ext = os.path.splitext(srt_fn)
     if ext != '.srt':
         logging.fatal('only .srt file is supported')
     md_fn = base + ext.split(".")[0] + ".md"
 
+    check_exists(md_fn, force)
+
     with open(srt_fn, encoding=encoding) as f:
         subs = srt.parse(f.read())
 
     md = MD(md_fn, encoding)
+    md.clear()
     md.add_done_edditing(False)
     if video_fn:
         if not is_video(video_fn):
