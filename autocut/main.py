@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-from . import utils
+from autocut import utils
 
 
 def main():
@@ -37,21 +37,24 @@ def main():
                         action=argparse.BooleanOptionalAction)
     parser.add_argument('--encoding', type=str, default='utf-8',
                         help='Document encoding format')
+    parser.add_argument('--device', type=str, default=None,
+                        choices=['cpu', 'cuda'],
+                        help='Force to CPU or GPU for trascribing. In default automatically use GPU if available.')
     parser.add_argument('--sub-optimize-cn', help='Optimize the display of long sentences in subtitle for Chinese',
                         action=argparse.BooleanOptionalAction)
-    parser.add_argument('--modal-words-cn', type=str, default="啊,嗯,呢,呐,吧",  # use English comma to separate
+    parser.add_argument('--modal-words-cn', type=str, default="啊,吧",  # use English comma to separate
                         help='To filter the modal words in sentences for Chinese')
 
     args = parser.parse_args()
 
     if args.transcribe:
-        from .transcribe import Transcribe
+        from autocut.transcribe import Transcribe
         Transcribe(args).run()
     elif args.cut:
-        from .cut import Cutter
+        from autocut.cut import Cutter
         Cutter(args).run()
     elif args.daemon:
-        from .daemon import Daemon
+        from autocut.daemon import Daemon
         Daemon(args).run()
     elif args.s:
         utils.compact_rst(args.inputs[0], args.encoding)
