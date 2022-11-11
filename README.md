@@ -76,9 +76,9 @@ autocut -c 22-52-00.mp4 22-52-00.srt 22-52-00.md
 3. 如果仅有`srt`文件，编辑不方便可以使用如下命令生成`md`文件，然后编辑`md`文件即可，但此时会完全对照`srt`生成，不会出现`no speech`等提示文本。
 
    ```bash
-   autocut -g test.srt test.mp4
-   autocut -g test.mp4 test.srt # 支持视频和字幕乱序传入
-   autocut -g test.srt # 也可以只传入字幕文件
+   autocut -m test.srt test.mp4
+   autocut -m test.mp4 test.srt # 支持视频和字幕乱序传入
+   autocut -m test.srt # 也可以只传入字幕文件
    ```
 
 
