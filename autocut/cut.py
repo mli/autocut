@@ -89,8 +89,7 @@ class Cutter:
                 return
             index = []
             for mark, sent in md.tasks():
-                if not mark:
-                    continue
+                if not mark: continue
                 m = re.match(r'\[(\d+)', sent.strip())
                 if m:
                     index.append(int(m.groups()[0]))
@@ -100,8 +99,6 @@ class Cutter:
             logging.info(f'Cut {fns["video"]} based on {fns["srt"]}')
 
         segments = []
-        # Avoid disordered subtitles
-        subs.sort(key=lambda x: x.start)
         for x in subs:
             segments.append({'start': x.start.total_seconds(), 'end': x.end.total_seconds()})
 

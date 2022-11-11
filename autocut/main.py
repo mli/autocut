@@ -1,6 +1,5 @@
 import argparse
 import logging
-import os
 
 from . import utils
 
@@ -22,8 +21,6 @@ def main():
                         action=argparse.BooleanOptionalAction)
     parser.add_argument('-s', help='Convert .srt to a compact format for easier editting',
                         action=argparse.BooleanOptionalAction)
-    parser.add_argument('-g', '--genMD', help='Convert .srt to .md for easier editting',
-                        action=argparse.BooleanOptionalAction)
     parser.add_argument('--lang', type=str, default='zh',
                         choices=['zh', 'en'],
                         help='The output language of transcription')
@@ -41,26 +38,14 @@ def main():
     parser.add_argument('--encoding', type=str, default='utf-8',
                         help='Document encoding format')
     parser.add_argument('--device', type=str, default=None,
-        choices=['cpu', 'cuda'],
-        help='Force to CPU or GPU for trascribing. In default automatically use GPU if available.')
+                        choices=['cpu', 'cuda'],
+                        help='Force to CPU or GPU for trascribing. In default automatically use GPU if available.')
 
     args = parser.parse_args()
 
     if args.transcribe:
         from .transcribe import Transcribe
         Transcribe(args).run()
-    elif args.genMD:
-        from .utils import trans_srt_to_md
-        if len(args.inputs) == 2:
-            [input_1, input_2] = args.inputs
-            base, ext = os.path.splitext(input_1)
-            if ext != '.srt':
-                input_1, input_2 = input_2, input_1
-            trans_srt_to_md(args.encoding, input_1, input_2)
-        elif len(args.inputs) == 1:
-            trans_srt_to_md(args.encoding, args.inputs[0])
-        else:
-            logging.warn('Wrong number of files, please pass in a .srt file or an additional video file')
     elif args.cut:
         from .cut import Cutter
         Cutter(args).run()

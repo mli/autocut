@@ -6,11 +6,6 @@ import srt
 import opencc
 
 
-def is_video(filename):
-    _, ext = os.path.splitext(filename)
-    return ext in ['.mp4', '.mov', '.mkv', '.flv']
-
-
 def change_ext(filename, new_ext):
     # Change the extension of filename to new_ext
     base, _ = os.path.splitext(filename)
@@ -80,8 +75,8 @@ class MD:
         # return (is_marked, rest) or (None, line) if not a task
         m = re.match(r'- +\[([ x])\] +(.*)', line)
         if not m:
-            return (None, line)
-        return (m.groups()[0].lower() == 'x', m.groups()[1])
+            return None, line
+        return m.groups()[0].lower() == 'x', m.groups()[1]
 
 
 def check_exists(output, force):
@@ -161,29 +156,3 @@ def compact_rst(sub_fn, encoding):
                 f.write(
                     f'{srt.timedelta_to_srt_timestamp(s.start)} --> {srt.timedelta_to_srt_timestamp(s.end)} {cc.convert(s.content.strip())}\n'.encode(
                         encoding, 'replace'))
-
-
-def trans_srt_to_md(encoding, srt_fn, video_fn=None):
-    base, ext = os.path.splitext(srt_fn)
-    if ext != '.srt':
-        logging.fatal('only .srt file is supported')
-    md_fn = base + ext.split(".")[0] + ".md"
-
-    with open(srt_fn, encoding=encoding) as f:
-        subs = srt.parse(f.read())
-
-    md = MD(md_fn, encoding)
-    md.add_done_edditing(False)
-    if video_fn:
-        if not is_video(video_fn):
-            logging.fatal(f'{video_fn} may not be a video')
-        md.add_video(os.path.basename(video_fn))
-    md.add(f'\nTexts generated from [{os.path.basename(srt_fn)}]({os.path.basename(srt_fn)}).'
-           'Mark the sentences to keep for autocut.\n'
-           'The format is [subtitle_index,duration_in_second] subtitle context.\n\n')
-
-    for s in subs:
-        sec = s.start.seconds
-        pre = f'[{s.index},{sec // 60:02d}:{sec % 60:02d}]'
-        md.add_task(False, f'{pre:11} {s.content.strip()}')
-    md.write()
