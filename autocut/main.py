@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 
 from . import utils
 
@@ -20,6 +21,8 @@ def main():
     parser.add_argument('-d', '--daemon', help='Monitor a folder to trascribe and cut',
                         action=argparse.BooleanOptionalAction)
     parser.add_argument('-s', help='Convert .srt to a compact format for easier editting',
+                        action=argparse.BooleanOptionalAction)
+    parser.add_argument('-m', '--to-md', help='Convert .srt to .md for easier editting',
                         action=argparse.BooleanOptionalAction)
     parser.add_argument('--lang', type=str, default='zh',
                         choices=['zh', 'en'],
@@ -46,6 +49,18 @@ def main():
     if args.transcribe:
         from .transcribe import Transcribe
         Transcribe(args).run()
+    elif args.to_md:
+        from .utils import trans_srt_to_md
+        if len(args.inputs) == 2:
+            [input_1, input_2] = args.inputs
+            base, ext = os.path.splitext(input_1)
+            if ext != '.srt':
+                input_1, input_2 = input_2, input_1
+            trans_srt_to_md(args.encoding, args.force, input_1, input_2)
+        elif len(args.inputs) == 1:
+            trans_srt_to_md(args.encoding, args.force, args.inputs[0])
+        else:
+            logging.warn('Wrong number of files, please pass in a .srt file or an additional video file')
     elif args.cut:
         from .cut import Cutter
         Cutter(args).run()
