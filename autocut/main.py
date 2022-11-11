@@ -1,7 +1,8 @@
 import argparse
 import logging
+import os
 
-from autocut import utils
+from . import utils
 
 
 def main():
@@ -21,10 +22,12 @@ def main():
                         action=argparse.BooleanOptionalAction)
     parser.add_argument('-s', help='Convert .srt to a compact format for easier editting',
                         action=argparse.BooleanOptionalAction)
+    parser.add_argument('-m', '--to-md', help='Convert .srt to .md for easier editting',
+                        action=argparse.BooleanOptionalAction)
     parser.add_argument('--lang', type=str, default='zh',
                         choices=['zh', 'en'],
                         help='The output language of transcription')
-    parser.add_argument('--prompt', type=str, default='大家好，',
+    parser.add_argument('--prompt', type=str, default='',
                         help='initial prompt feed into whisper')
     parser.add_argument('--whisper-model', type=str, default='small',
                         choices=['tiny', 'base', 'small', 'medium', 'large'],
@@ -48,13 +51,25 @@ def main():
     args = parser.parse_args()
 
     if args.transcribe:
-        from autocut.transcribe import Transcribe
+        from .transcribe import Transcribe
         Transcribe(args).run()
+    elif args.to_md:
+        from .utils import trans_srt_to_md
+        if len(args.inputs) == 2:
+            [input_1, input_2] = args.inputs
+            base, ext = os.path.splitext(input_1)
+            if ext != '.srt':
+                input_1, input_2 = input_2, input_1
+            trans_srt_to_md(args.encoding, args.force, input_1, input_2)
+        elif len(args.inputs) == 1:
+            trans_srt_to_md(args.encoding, args.force, args.inputs[0])
+        else:
+            logging.warn('Wrong number of files, please pass in a .srt file or an additional video file')
     elif args.cut:
-        from autocut.cut import Cutter
+        from .cut import Cutter
         Cutter(args).run()
     elif args.daemon:
-        from autocut.daemon import Daemon
+        from .daemon import Daemon
         Daemon(args).run()
     elif args.s:
         utils.compact_rst(args.inputs[0], args.encoding)
