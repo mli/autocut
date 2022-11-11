@@ -5,14 +5,15 @@ class TranscribeMiddleware:
     def __init__(self, args, subs: list[srt.Subtitle]):
         self.args = args
         self.subs = subs
-        self.SINGLE_SUB_MAX_LEN = 16
+        self.SINGLE_SUB_CN_MAX_LEN = self.args.sub_cn_inline_limit
+        self.MODAL_WORDS_CN = self.args.sub_cn_modal_words.strip()
 
     def run(self):
         if self.args.lang == "zh":
-            if self.args.sub_optimize_cn:
+            if self.args.sub_cn_inline_limit > 0:
                 self._sub_split_CN()
 
-            if len(self.args.modal_words_cn.strip()) > 0:
+            if len(self.args.sub_cn_modal_words.strip()) > 0:
                 self._sub_filter_modal_CN()
 
     def _sub_split_CN(self):
@@ -45,7 +46,7 @@ class TranscribeMiddleware:
             for index, sub_split_item in enumerate(sub_split_list):
                 sub_split = sub_split_item.strip()
 
-                if index > 0 and interval_len + len(sub_split) > self.SINGLE_SUB_MAX_LEN + self.SINGLE_SUB_MAX_LEN // 2:
+                if index > 0 and interval_len + len(sub_split) > self.SINGLE_SUB_CN_MAX_LEN + self.SINGLE_SUB_CN_MAX_LEN // 2:
                     _add_sub(index)
                     interval_start = interval_end
                     start_index = index
@@ -54,7 +55,7 @@ class TranscribeMiddleware:
                 interval_len = interval_len + len(sub_split)
                 interval_end = interval_end + (len(sub_split) / sub_len) * duration
 
-                if interval_len < self.SINGLE_SUB_MAX_LEN + 1:
+                if interval_len < self.SINGLE_SUB_CN_MAX_LEN + 1:
                     continue
 
                 _add_sub(index + 1)
@@ -75,7 +76,7 @@ class TranscribeMiddleware:
         import jionlp as jio
         import re
 
-        key_list = [key.strip() for key in self.args.modal_words_cn.split(",")]
+        key_list = [key.strip() for key in self.MODAL_WORDS_CN.split(",")]
         for sub in self.subs:
             # list of separate short sentence
             sub_split_list = jio.split_sentence(sub.content.strip().replace(",", "，"), criterion='fine')
@@ -84,6 +85,7 @@ class TranscribeMiddleware:
             new_sub_split_list = []
             for sub_split_item in sub_split_list:
                 sub_split = sub_split_item.strip()
+                # via jionlp, the last character is always text or punctuation
                 last_word_index = -1 if re.match(r"^[\u4E00-\u9FA5A-Za-z0-9_]+$", sub_split[-1]) else -2
 
                 if sub_split[last_word_index] in key_list:
