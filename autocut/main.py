@@ -41,8 +41,8 @@ def main():
     parser.add_argument('--encoding', type=str, default='utf-8',
                         help='Document encoding format')
     parser.add_argument('--device', type=str, default=None,
-        choices=['cpu', 'cuda'],
-        help='Force to CPU or GPU for trascribing. In default automatically use GPU if available.')
+                        choices=['cpu', 'cuda'],
+                        help='Force to CPU or GPU for trascribing. In default automatically use GPU if available.')
 
     args = parser.parse_args()
 

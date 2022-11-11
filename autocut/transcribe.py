@@ -23,23 +23,23 @@ class Transcribe:
         for input in self.args.inputs:
             logging.info(f'Transcribing {input}')
             name, _ = os.path.splitext(input)
-            if utils.check_exists(name+'.md', self.args.force):
+            if utils.check_exists(name + '.md', self.args.force):
                 continue
 
             audio = whisper.load_audio(input, sr=self.sampling_rate)
             speech_timestamps = self._detect_voice_activity(audio)
             transcribe_results = self._transcibe(audio, speech_timestamps)
 
-            output = name +'.srt'
+            output = name + '.srt'
             self._save_srt(output, transcribe_results)
             logging.info(f'Transcribed {input} to {output}')
-            self._save_md(name+'.md', output, input)
-            logging.info(f'Saved texts to {name+".md"} to mark sentences')
+            self._save_md(name + '.md', output, input)
+            logging.info(f'Saved texts to {name + ".md"} to mark sentences')
 
     def _detect_voice_activity(self, audio):
         """Detect segments that have voice activities"""
         if not self.args.vad:
-            return [{'start': 0, 'end':len(audio)}]
+            return [{'start': 0, 'end': len(audio)}]
         tic = time.time()
         if self.vad_model is None or self.detect_speech is None:
             self.vad_model, funcs = torch.hub.load(
@@ -50,7 +50,7 @@ class Transcribe:
             self.detect_speech = funcs[0]
 
         speeches = self.detect_speech(audio, self.vad_model,
-            sampling_rate=self.sampling_rate)
+                                      sampling_rate=self.sampling_rate)
 
         # Merge very closed segments
         # speeches = _merge_adjacent_segments(speeches, 0.5 * self.sampling_rate)
@@ -59,10 +59,10 @@ class Transcribe:
         speeches = utils.remove_short_segments(speeches, 10.0 * self.sampling_rate)
 
         # Expand to avoid to tight cut. You can tune the pad length
-        speeches =  utils.expand_segments(speeches, 0.2*self.sampling_rate,
-            0.0*self.sampling_rate, audio.shape[0])
+        speeches = utils.expand_segments(speeches, 0.2 * self.sampling_rate,
+                                         0.0 * self.sampling_rate, audio.shape[0])
 
-        logging.info(f'Done voice activity detetion in {time.time()-tic:.1f} sec')
+        logging.info(f'Done voice activity detetion in {time.time() - tic:.1f} sec')
         return speeches
 
     def _transcibe(self, audio, speech_timestamps):
@@ -74,11 +74,11 @@ class Transcribe:
         # TODO, a better way is merging these segments into a single one, so whisper can get more context
         for seg in speech_timestamps:
             r = self.whisper_model.transcribe(
-                    audio[int(seg['start']):int(seg['end'])],
-                    task='transcribe', language=self.args.lang, initial_prompt=self.args.prompt)
+                audio[int(seg['start']):int(seg['end'])],
+                task='transcribe', language=self.args.lang, initial_prompt=self.args.prompt)
             r['origin_timestamp'] = seg
             res.append(r)
-        logging.info(f'Done transcription in {time.time()-tic:.1f} sec')
+        logging.info(f'Done transcription in {time.time() - tic:.1f} sec')
         return res
 
     def _save_srt(self, output, transcribe_results):
@@ -88,9 +88,9 @@ class Transcribe:
 
         def _add_sub(start, end, text):
             subs.append(srt.Subtitle(index=0,
-                start=datetime.timedelta(seconds=start),
-                end=datetime.timedelta(seconds=end),
-                content=cc.convert(text.strip())))
+                                     start=datetime.timedelta(seconds=start),
+                                     end=datetime.timedelta(seconds=end),
+                                     content=cc.convert(text.strip())))
 
         prev_end = 0
         for r in transcribe_results:
@@ -117,11 +117,11 @@ class Transcribe:
         md.add_done_edditing(False)
         md.add_video(os.path.basename(video_fn))
         md.add(f'\nTexts generated from [{os.path.basename(srt_fn)}]({os.path.basename(srt_fn)}).'
-        'Mark the sentences to keep for autocut.\n'
-        'The format is [subtitle_index,duration_in_second] subtitle context.\n\n')
+               'Mark the sentences to keep for autocut.\n'
+               'The format is [subtitle_index,duration_in_second] subtitle context.\n\n')
 
         for s in subs:
             sec = s.start.seconds
-            pre = f'[{s.index},{sec//60:02d}:{sec % 60:02d}]'
+            pre = f'[{s.index},{sec // 60:02d}:{sec % 60:02d}]'
             md.add_task(False, f'{pre:11} {s.content.strip()}')
         md.write()
