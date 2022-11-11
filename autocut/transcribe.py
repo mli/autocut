@@ -27,6 +27,7 @@ class Transcribe:
                 continue
 
             audio = whisper.load_audio(input, sr=self.sampling_rate)
+            print(audio.size)
             speech_timestamps = self._detect_voice_activity(audio)
             transcribe_results = self._transcibe(audio, speech_timestamps)
 
