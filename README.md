@@ -95,16 +95,22 @@ autocut -c 22-52-00.mp4 22-52-00.srt 22-52-00.md
 
 4. 视频是通过ffmpeg导出。在Apple M1芯片上它用不了GPU，导致导出速度不如专业视频软件。
 
-5. 默认输出编码是 `utf-8`. 你可以通过`--encoding`指定其他编码格式。但是需要注意生成字幕文件和使用字幕文件剪辑时的编码格式需要一致。例如使用 `gbk`.
+### 常见问题
+
+1. **输出的是乱码？**
+
+   AutoCut 默认输出编码是 `utf-8`. 确保你的编辑器也使用了`utf-8`解码。你可以通过`--encoding`指定其他编码格式。但是需要注意生成字幕文件和使用字幕文件剪辑时的编码格式需要一致。例如使用 `gbk`.
 
     ```bash
     autocut -t test.mp4 --encoding=gbk
-    autocut -c test.mov test.srt test.md --encoding=gbk
+    autocut -c test.mp4 test.srt test.md --encoding=gbk
     ```
 
     如果使用了其他编码格式（如gbk等）生成md文件并用Typora打开后，该文件可能会被Typora自动转码为其他编码格式，此时再通过生成时指定的编码格式进行剪辑时可能会出现编码不支持等报错。因此可以在使用Typora编辑后再通过VS Code等修改到你需要的编码格式进行保存后再使用剪辑功能。
 
-6. 当你有Nvidia GPU，而且安装了对应版本的Pytorch的时候，转录是在GPU上进行。你可以通过命令来查看当前是不是支持GPU。
+1. **如何使用GPU来转录？**
+
+   当你有Nvidia GPU，而且安装了对应版本的Pytorch的时候，转录是在GPU上进行。你可以通过命令来查看当前是不是支持GPU。
 
    ```bash
    python -c "import torch; print(torch.cuda.is_available())"
@@ -112,8 +118,15 @@ autocut -c 22-52-00.mp4 22-52-00.srt 22-52-00.md
 
    否则你可以在安装autocut前手动安装对应的GPU版本Pytorch。
 
-   GPU通常带来加速。但whisper的大模型需要一定的GPU显存，如果你的显存不够，但又想用大模型，可以通过`--device`来强制使用`cpu`。例如
+1. **使用GPU是报错显存不够。**
+
+   whisper的大模型需要一定的GPU显存。如果你的显存不够，你可以用小一点的模型，例如`small`。如果你仍然想用大模型，可以通过`--device`来强制使用`cpu`。例如
 
    ```bash
    autocut -t 11-28-18.mp4 --whisper-model large --device cpu
    ```
+
+1. **能不能直接用 `pip install autocut` 安装?**
+
+   因为autocut的依赖whisper没有发布pypi包，所以目前只能用 `pip install git+https://github.com/mli/autocut.git` 这种方式发布。有需求的同学可以查看whisper模型是不是能直接在 huggingface hub 下载，从而摆脱whisper包的依赖。
+
