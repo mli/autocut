@@ -132,6 +132,9 @@ autocut -c 22-52-00.mp4 22-52-00.srt 22-52-00.md
 
 
 ## 如何参与贡献
+
+[这里有一些想做的feature](https://github.com/mli/autocut/issues/22)，欢迎贡献
+
 ### 代码结构
 ```text
 autocut
