@@ -1,3 +1,6 @@
+import json
+import shlex
+from io import StringIO
 from subprocess import Popen, PIPE
 import logging
 import ffmpeg
@@ -26,8 +29,6 @@ class Interface:
             self.args.update(self.sampling_rate, self.lang, self.prompt, self.whisper_model, self.device, self.vad)
             # To read file as bytes:
             bytes_data = self.uploaded_video.getvalue()
-            # audio = self._load_audio(bytes_data)
-            # st.write(audio.size)
             self.transcribe = TranscribeByBytes(self.args)
             if self.transcribe.load_audio(bytes_data, self.uploaded_video.name):
                 if st.button('开始转换'):
@@ -59,11 +60,23 @@ class TranscribeByBytes(Transcribe):
         try:
             # This launches a subprocess to decode audio while down-mixing and resampling as necessary.
             # Requires the ffmpeg CLI and `ffmpeg-python` package to be installed.
-            cmd = ['ffmpeg', '-n', '-i', 'pipe:', '-acodec', 'pcm_s16le', '-f', 'wav', '-ac', '1', '-ar',
-                   str(self.args.sampling_rate), 'pipe:']
-            p = Popen(cmd, stdin=PIPE, stdout=PIPE, stderr=PIPE, bufsize=-1)
-            out, _ = p.communicate(input=bytes_data)
-            p.stdin.close()
+            out, _ = Popen(shlex.split('ffprobe -v error -i pipe: -select_streams v -print_format json -show_streams'),
+                           stdin=PIPE, stdout=PIPE, bufsize=-1)\
+                .communicate(input=bytes_data)
+            video_info = json.loads(out)
+            # 得到视频的分辨率
+            width = (video_info['streams'][0])['width']
+            height = (video_info['streams'][0])['height']
+            print(video_info)
+            print(width, height)
+
+            out, _ = (
+                ffmpeg.input('pipe:', threads=0, format='rawvideo', s='{}x{}'.format(width, height))
+                .output('pipe:', format="s16le", acodec="pcm_s16le", ac=1, ar=self.args.sampling_rate)
+                .run(input=bytes_data, capture_stdout=True, capture_stderr=True)
+            )
+            print(out)
+            logging.info(StringIO(_.decode("utf-8")).read())
         except ffmpeg.Error as e:
             raise RuntimeError(f"Failed to load audio: {e.stderr.decode()}") from e
         self.audio = np.frombuffer(out, np.int16).flatten().astype(np.float32) / 32768.0

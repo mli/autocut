@@ -12,7 +12,7 @@ def main():
     logging.basicConfig(format='[autocut:%(filename)s:L%(lineno)d] %(levelname)-6s %(message)s')
     logging.getLogger().setLevel(logging.INFO)
 
-    parser.add_argument('inputs', type=str, nargs='?',
+    parser.add_argument('inputs', type=str, nargs='+',
                         help='Inputs filenames/folders')
     parser.add_argument('-t', '--transcribe', help='Transcribe videos/audio into subtitles',
                         action=argparse.BooleanOptionalAction)
