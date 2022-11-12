@@ -62,7 +62,7 @@ class Transcribe:
         speeches = utils.expand_segments(speeches, 0.2 * self.sampling_rate,
                                          0.0 * self.sampling_rate, audio.shape[0])
 
-        logging.info(f'Done voice activity detetion in {time.time() - tic:.1f} sec')
+        logging.info(f'Done voice activity detection in {time.time() - tic:.1f} sec')
         return speeches
 
     def _transcibe(self, audio, speech_timestamps):
@@ -114,7 +114,7 @@ class Transcribe:
             subs = srt.parse(f.read())
 
         md = utils.MD(md_fn, self.args.encoding)
-        md.add_done_edditing(False)
+        md.add_done_editing(False)
         md.add_video(os.path.basename(video_fn))
         md.add(f'\nTexts generated from [{os.path.basename(srt_fn)}]({os.path.basename(srt_fn)}).'
                'Mark the sentences to keep for autocut.\n'
