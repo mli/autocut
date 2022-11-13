@@ -2,7 +2,6 @@ import copy
 import glob
 import logging
 import os
-import re
 import time
 
 from . import cut, transcribe, utils
@@ -20,14 +19,10 @@ class Daemon:
             time.sleep(self.sleep)
             self.sleep = min(60, self.sleep + 1)
 
-    def _is_video(self, filename):
-        _, ext = os.path.splitext(filename)
-        return ext in ['.mp4', '.mov', '.mkv', '.flv']
-
     def _iter(self):
         folder = self.args.inputs[0]
         files = sorted(list(glob.glob(os.path.join(folder, '*'))))
-        videos = [f for f in files if self._is_video(f)]
+        videos = [f for f in files if utils.is_video(f)]
         args = copy.deepcopy(self.args)
         for f in videos:
             srt_fn = utils.change_ext(f, 'srt')
