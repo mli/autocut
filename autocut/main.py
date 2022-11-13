@@ -43,6 +43,10 @@ def main():
     parser.add_argument('--device', type=str, default=None,
                         choices=['cpu', 'cuda'],
                         help='Force to CPU or GPU for trascribing. In default automatically use GPU if available.')
+    parser.add_argument('--sub-cn-inline-limit', type=int, default=16,  # set 0 to disable
+                        help='Optimize the display of long sentences in subtitle for Chinese')
+    parser.add_argument('--sub-cn-modal-words', type=str, default="啊,吧",  # use English comma to separate
+                        help='To filter the modal words in sentences for Chinese')
 
     args = parser.parse_args()
 

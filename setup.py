@@ -1,11 +1,13 @@
-from setuptools import setup, find_packages
 import os
+
+from setuptools import setup, find_packages
 
 requirements = [
     'srt',
     'moviepy',
     'opencc-python-reimplemented',
-    'whisper @ git+https://github.com/openai/whisper.git'
+    'whisper @ git+https://github.com/openai/whisper.git',
+    'jionlp',
 ]
 
 init_fn = os.path.join(os.path.dirname(__file__), 'autocut', '__init__.py')
