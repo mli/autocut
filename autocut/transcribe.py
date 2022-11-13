@@ -63,7 +63,7 @@ class Transcribe:
                                          0.0 * self.sampling_rate, audio.shape[0])
 
         logging.info(f'Done voice activity detetion in {time.time() - tic:.1f} sec')
-        return speeches
+        return speeches if len(speeches) > 1 else [{'start': 0, 'end': len(audio)}]
 
     def _transcibe(self, audio, speech_timestamps):
         tic = time.time()
