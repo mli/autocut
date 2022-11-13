@@ -31,13 +31,17 @@ def add_cut(filename):
 
 # a very simple markdown parser
 class MD:
-    def __init__(self, filename, encoding) -> None:
+    def __init__(self, filename, encoding):
         self.lines = []
         self.EDIT_DONE_MAKR = '<-- Mark if you are done editing.'
-        self.filename = filename
         self.encoding = encoding
-        if os.path.exists(filename):
-            with open(filename, encoding=self.encoding) as f:
+        self.filename = filename
+        if filename:
+            self.load_file()
+
+    def load_file(self):
+        if os.path.exists(self.filename):
+            with open(self.filename, encoding=self.encoding) as f:
                 self.lines = f.readlines()
 
     def clear(self):
@@ -68,7 +72,7 @@ class MD:
     def add_task(self, mark, contents):
         self.add(f'- [{"x" if mark else " "}] {contents.strip()}')
 
-    def add_done_edditing(self, mark):
+    def add_done_editing(self, mark):
         self.add_task(mark, self.EDIT_DONE_MAKR)
 
     def add_video(self, video_fn):
@@ -82,7 +86,6 @@ class MD:
         if not m:
             return None, line
         return m.groups()[0].lower() == 'x', m.groups()[1]
-
 
 
 def check_exists(output, force):
@@ -160,8 +163,9 @@ def compact_rst(sub_fn, encoding):
         with open(base + COMPACT + ext, 'wb') as f:
             for s in subs:
                 f.write(
-                    f'{srt.timedelta_to_srt_timestamp(s.start)} --> {srt.timedelta_to_srt_timestamp(s.end)} {cc.convert(s.content.strip())}\n'.encode(
-                        encoding, 'replace'))
+                    f'{srt.timedelta_to_srt_timestamp(s.start)} --> {srt.timedelta_to_srt_timestamp(s.end)} '
+                    f'{cc.convert(s.content.strip())}\n'
+                    .encode(encoding, 'replace'))
 
 
 def trans_srt_to_md(encoding, force, srt_fn, video_fn=None):
@@ -177,7 +181,7 @@ def trans_srt_to_md(encoding, force, srt_fn, video_fn=None):
 
     md = MD(md_fn, encoding)
     md.clear()
-    md.add_done_edditing(False)
+    md.add_done_editing(False)
     if video_fn:
         if not is_video(video_fn):
             logging.fatal(f'{video_fn} may not be a video')

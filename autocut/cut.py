@@ -21,7 +21,7 @@ class Merger:
             return
 
         md.clear()
-        md.add_done_edditing(False)
+        md.add_done_editing(False)
         md.add('\nSelect the files that will be used to generate `autocut_final.mp4`\n')
         base = lambda fn: os.path.basename(fn)
         for f in videos:
@@ -32,9 +32,10 @@ class Merger:
             if len(video_md.tasks()) > 1:
                 for _, t in video_md.tasks()[1:]:
                     m = re.findall(r'\] (.*)', t)
-                    if m and not 'no speech' in m[0].lower():
+                    if m and 'no speech' not in m[0].lower():
                         desc += m[0] + ' '
-                    if len(desc) > 50: break
+                    if len(desc) > 50:
+                        break
             md.add_task(False, f'[{base(f)}]({base(md_fn)}) {"[Editted]" if video_md.done_editing() else ""} {desc}')
         md.write()
 
@@ -46,9 +47,11 @@ class Merger:
 
         videos = []
         for m, t in md.tasks():
-            if not m: continue
+            if not m:
+                continue
             m = re.findall(r'\[(.*)\]', t)
-            if not m: continue
+            if not m:
+                continue
             fn = os.path.join(os.path.dirname(md_fn), m[0])
             logging.info(f'Loading {fn}')
             videos.append(editor.VideoFileClip(fn))
