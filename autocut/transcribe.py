@@ -73,7 +73,6 @@ class Transcribe:
             self.whisper_model = whisper.load_model(self.args.whisper_model, self.args.device)
 
         res = []
-        print(speech_timestamps)
         # TODO, a better way is merging these segments into a single one, so whisper can get more context
         for seg in (speech_timestamps 
                 if len(speech_timestamps) == 1 
