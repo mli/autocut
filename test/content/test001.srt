@@ -1,0 +1,8 @@
+1
+00:00:00,000 --> 00:00:05,000
+大家好,我的名字是AutoCut.这是一条用于测试的视频。
+
+2
+00:00:05,000 --> 00:00:10,260
+Hello, my name is AutoCut. This is a video for testing.
+

@@ -28,16 +28,17 @@ logger.addHandler(file_handler)
 logger.addHandler(ch)
 
 TEST_VIDEO_PATH = './test/video/'
-TEST_RES_PATH = './test/result/'
+TEST_CONTENT_PATH = './test/content/'
 TEST_VIDEO_FILE = ['test001.mp4', 'test002.mov', 'test003.mkv', 'test004.flv']
 TEST_VIDEO_FILE_LANG = ['test001_en.mp4']
 TEST_VIDEO_FILE_SIMPLE = ['test001.mp4']
 
 
 class TestArgs:
-    def __init__(self, encoding='utf-8', sampling_rate=16000, lang='zh', prompt='', whisper_model='small', device=None,
+    def __init__(self, encoding='utf-8', sampling_rate=16000, bitrate='10m', lang='zh', prompt='', whisper_model='small', device=None,
                  vad=False, force=False):
         self.inputs = []
+        self.bitrate = bitrate
         self.encoding = encoding
         self.sampling_rate = sampling_rate
         self.lang = lang
