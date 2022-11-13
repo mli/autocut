@@ -84,7 +84,6 @@ class MD:
         return m.groups()[0].lower() == 'x', m.groups()[1]
 
 
-
 def check_exists(output, force):
     if os.path.exists(output):
         if force:
