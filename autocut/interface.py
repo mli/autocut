@@ -99,7 +99,7 @@ class MyArgs:
         self.device = device
         self.vad = vad
 
-    def update(self, sampling_rate: int, lang: st, prompt: str, whisper_model: str, device: str, vad: str):
+    def update(self, sampling_rate: int, lang: str, prompt: str, whisper_model: str, device: str, vad: str):
         self.sampling_rate = sampling_rate
         self.lang = lang
         self.prompt = prompt
