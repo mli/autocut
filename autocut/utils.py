@@ -91,7 +91,7 @@ class MD:
 def check_exists(output, force):
     if os.path.exists(output):
         if force:
-            logging.info(f'{output} exists. Will ovewrite it')
+            logging.info(f'{output} exists. Will overwrite it')
         else:
             logging.info(f'{output} exists, skipping... Use the --force flag to overwrite')
             return True
