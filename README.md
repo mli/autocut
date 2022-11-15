@@ -54,24 +54,34 @@ scoop install ffmpeg
 git clone https://github.com/mli/autocut.git
 ```
 
+### 安装CPU版本  
+
 进入项目根目录，然后构建docker映像。  
 
 ```bash
 docker build -t autocut .
 ```
 
-使用GPU加速需要主机有Nvidia的显卡并安装好相应驱动，然后使用下面的命令创建docker容器，就可以直接使用了。  
+运行下面的命令创建docker容器，就可以直接使用了。
 
 ```bash
-docker run --gpus all -it --rm --name autocut -v E:\autocut:/autocut/video autocut
+docker run -it --rm -v E:\autocut:/autocut/video autocut /bin/bash
 ```
 
-其中`-v`是将主机存放视频的文件夹`E:\autocut`映射到虚拟机的`/autocut/video`目录。`E:\autocut`是主机存放视频的目录，需修改为自己主机的目录。  
+其中`-v`是将主机存放视频的文件夹`E:\autocut`映射到虚拟机的`/autocut/video`目录。`E:\autocut`是主机存放视频的目录，需修改为自己主机存放视频的目录。  
 
-当无GPU或不启用GPU加速时不需要加--gpus all参数。  
+### 安装GPU版本
+
+使用GPU加速需要主机有Nvidia的显卡并安装好相应驱动。然后在项目根目录，执行下面的命令构建docker映像。
 
 ```bash
-docker run -it --rm --name autocut -v E:\autocut:/autocut/video autocut
+docker build -f ./Dockerfile.cuda -t autocut-gpu .
+```
+
+使用GPU加速时，运行docker容器需添加参数 `--gpus all`。
+
+```bash
+docker run --gpus all -it --rm -v E:\autocut:/autocut/video autocut-gpu
 ```
 
 ## 更多使用选项
