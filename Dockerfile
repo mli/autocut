@@ -1,4 +1,4 @@
-FROM pytorch/pytorch:1.13.0-cuda11.6-cudnn8-devel
+FROM python:3.9-slim as base
 
 RUN mkdir /autocut
 COPY ./ /autocut
@@ -8,4 +8,5 @@ RUN apt update && \
     apt install -y git && \
     apt install -y ffmpeg
 
-RUN pip install .
+RUN pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cpu && \
+    pip install .
