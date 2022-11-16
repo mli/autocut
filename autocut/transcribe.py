@@ -115,7 +115,7 @@ class Transcribe:
 
         md = utils.MD(md_fn, self.args.encoding)
         md.clear()
-        md.add_done_edditing(False)
+        md.add_done_editing(False)
         md.add_video(os.path.basename(video_fn))
         md.add(f'\nTexts generated from [{os.path.basename(srt_fn)}]({os.path.basename(srt_fn)}).'
                'Mark the sentences to keep for autocut.\n'
