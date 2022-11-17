@@ -185,4 +185,5 @@ autocut
 1. commit 信息用英文描述清楚你做了哪些修改即可，小写字母开头。
 2. 最好可以保证一次的 commit 涉及的修改比较小，可以简短地描述清楚，这样也方便之后有修改时的查找。
 3. PR 的时候 title 简述有哪些修改， contents 可以具体写下修改内容。
+4. run test `pip install pytest` then `pytest test`
 

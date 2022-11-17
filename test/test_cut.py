@@ -5,7 +5,7 @@ import unittest
 from parameterized import parameterized, param
 
 from autocut.cut import Cutter
-from test.config import TestArgs, TEST_VIDEO_PATH, TEST_VIDEO_FILE_SIMPLE, TEST_CONTENT_PATH
+from config import TestArgs, TEST_VIDEO_PATH, TEST_VIDEO_FILE_SIMPLE, TEST_CONTENT_PATH
 
 
 class TestCut(unittest.TestCase):
