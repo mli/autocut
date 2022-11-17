@@ -5,7 +5,7 @@ import unittest
 from parameterized import parameterized, param
 
 from autocut.utils import MD
-from test.config import TEST_VIDEO_FILE, TestArgs, TEST_VIDEO_FILE_SIMPLE, TEST_VIDEO_FILE_LANG, TEST_VIDEO_PATH
+from config import TEST_VIDEO_FILE, TestArgs, TEST_VIDEO_FILE_SIMPLE, TEST_VIDEO_FILE_LANG, TEST_VIDEO_PATH
 from autocut.transcribe import Transcribe
 
 
