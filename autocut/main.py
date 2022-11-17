@@ -18,11 +18,11 @@ def main():
                         action=argparse.BooleanOptionalAction)
     parser.add_argument('-c', '--cut', help='Cut a video based on subtitles',
                         action=argparse.BooleanOptionalAction)
-    parser.add_argument('-d', '--daemon', help='Monitor a folder to trascribe and cut',
+    parser.add_argument('-d', '--daemon', help='Monitor a folder to transcribe and cut',
                         action=argparse.BooleanOptionalAction)
-    parser.add_argument('-s', help='Convert .srt to a compact format for easier editting',
+    parser.add_argument('-s', help='Convert .srt to a compact format for easier editing',
                         action=argparse.BooleanOptionalAction)
-    parser.add_argument('-m', '--to-md', help='Convert .srt to .md for easier editting',
+    parser.add_argument('-m', '--to-md', help='Convert .srt to .md for easier editing',
                         action=argparse.BooleanOptionalAction)
     parser.add_argument('--lang', type=str, default='zh',
                         choices=['zh', 'en'],
@@ -42,7 +42,7 @@ def main():
                         help='Document encoding format')
     parser.add_argument('--device', type=str, default=None,
                         choices=['cpu', 'cuda'],
-                        help='Force to CPU or GPU for trascribing. In default automatically use GPU if available.')
+                        help='Force to CPU or GPU for transcribing. In default automatically use GPU if available.')
 
     args = parser.parse_args()
 

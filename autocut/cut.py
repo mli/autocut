@@ -27,7 +27,7 @@ class Merger:
         for f in videos:
             md_fn = utils.change_ext(f, 'md')
             video_md = utils.MD(md_fn, self.args.encoding)
-            # select a few workds to scribe the video
+            # select a few words to scribe the video
             desc = ''
             if len(video_md.tasks()) > 1:
                 for _, t in video_md.tasks()[1:]:
@@ -36,7 +36,7 @@ class Merger:
                         desc += m[0] + ' '
                     if len(desc) > 50:
                         break
-            md.add_task(False, f'[{base(f)}]({base(md_fn)}) {"[Editted]" if video_md.done_editing() else ""} {desc}')
+            md.add_task(False, f'[{base(f)}]({base(md_fn)}) {"[Edited]" if video_md.done_editing() else ""} {desc}')
         md.write()
 
     def run(self):
@@ -110,7 +110,7 @@ class Cutter:
 
         video = editor.VideoFileClip(fns['video'])
 
-        # Add a fade between two clips. Not quite necesary. keep code here for reference
+        # Add a fade between two clips. Not quite necessary. keep code here for reference
         # fade = 0
         # segments = _expand_segments(segments, fade, 0, video.duration)
         # clips = [video.subclip(
@@ -125,6 +125,6 @@ class Cutter:
         final_clip = final_clip.without_audio().set_audio(aud)
         final_clip = final_clip.fx(editor.afx.audio_normalize)
 
-        # an alterantive to birate is use crf, e.g. ffmpeg_params=['-crf', '18']
+        # an alternative to birate is use crf, e.g. ffmpeg_params=['-crf', '18']
         final_clip.write_videofile(output_fn, audio_codec='aac', bitrate=self.args.bitrate)
         logging.info(f'Saved video to {output_fn}')

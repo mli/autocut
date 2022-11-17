@@ -30,7 +30,7 @@ class Transcribe:
 
             audio = whisper.load_audio(input, sr=self.sampling_rate)
             speech_timestamps = self._detect_voice_activity(audio)
-            transcribe_results = self._transcibe(audio, speech_timestamps)
+            transcribe_results = self._transcribe(audio, speech_timestamps)
 
             output = name + '.srt'
             self._save_srt(output, transcribe_results)
@@ -67,7 +67,7 @@ class Transcribe:
         logging.info(f'Done voice activity detection in {time.time() - tic:.1f} sec')
         return speeches if len(speeches) > 1 else [{'start': 0, 'end': len(audio)}]
 
-    def _transcibe(self, audio, speech_timestamps):
+    def _transcribe(self, audio, speech_timestamps):
         tic = time.time()
         if self.whisper_model is None:
             self.whisper_model = whisper.load_model(self.args.whisper_model, self.args.device)
@@ -121,6 +121,7 @@ class Transcribe:
             subs = srt.parse(f.read())
 
         md = utils.MD(md_fn, self.args.encoding)
+        md.clear()
         md.add_done_editing(False)
         md.add_video(os.path.basename(video_fn))
         md.add(f'\nTexts generated from [{os.path.basename(srt_fn)}]({os.path.basename(srt_fn)}).'

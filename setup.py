@@ -5,6 +5,8 @@ requirements = [
     'srt',
     'moviepy',
     'opencc-python-reimplemented',
+    'torchaudio',
+    'parameterized',
     'whisper @ git+https://github.com/openai/whisper.git',
     'tqdm'
 ]
