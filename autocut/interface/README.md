@@ -36,5 +36,4 @@ autocut-gui
 
 ## 视频演示
 
-<iframe src="//player.bilibili.com/player.html?aid=987673295&bvid=BV1zt4y1N77g&cid=894682895&page=1" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" height="600px"> </iframe>
-
+- [基于 streamlit 的 autocut 页面使用](https://www.bilibili.com/video/BV1zt4y1N77g/?share_source=copy_web&vd_source=c84b9680fa183b87741c5a276bf69f8d)
