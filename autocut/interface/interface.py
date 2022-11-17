@@ -1,3 +1,4 @@
+import hashlib
 import json
 import time
 import os.path
@@ -14,6 +15,9 @@ import numpy as np
 from autocut.cut import Cutter
 from autocut.transcribe import Transcribe
 from autocut.utils import MD
+
+
+md5 = hashlib.md5()
 
 
 class Interface:
@@ -118,7 +122,8 @@ class Interface:
     def _save_file(self, bytes_data: bytes, name: str):
         if not os.path.exists('./temp'):
             os.makedirs('./temp')
-        name = str(hash(name)) + str(time.time()).replace('.', '-') + '.' + name.split('.')[1]
+        md5.update(name.encode(encoding='utf-8'))
+        name = str(md5.hexdigest()) + str(time.time()).replace('.', '-') + '.' + name.split('.')[1]
         with open('./temp/' + name, "wb") as f:
             f.write(bytes_data)
         return name
