@@ -7,6 +7,8 @@ requirements = [
     'opencc-python-reimplemented',
     'streamlit',
     'numpy',
+    'torchaudio',
+    'parameterized',
     'whisper @ git+https://github.com/openai/whisper.git'
 ]
 
