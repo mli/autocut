@@ -84,6 +84,17 @@ docker build -f ./Dockerfile.cuda -t autocut-gpu .
 docker run --gpus all -it --rm -v E:\autocut:/autocut/video autocut-gpu
 ```
 
+## 基于 streamlit 制作的网页使用
+
+```shell
+autocut-gui
+```
+
+具体步骤见对应的[README](./autocut/interface/README.md)。
+
+![streamlit-overview](./imgs/streamlit-overview.png)
+
+
 ## 更多使用选项
 
 ### 转录某个视频生成`.srt`和`.md`结果。
