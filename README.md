@@ -216,7 +216,7 @@ autocut
 代码格式目前是遵循 PEP-8，变量命名尽量语义化即可。
 
 在开发完成之后，最重要的一点是需要进行**测试**，请保证提交之前对所有**与你修改直接相关的部分**以及**你修改会影响到的部分**都进行了测试，并保证功能的正常。
-目前没有测试用例的CI，会在之后进行完善。
+目前使用 `GitHub Actions` CI, Lint 使用 black 提交前请运行 `black`
 
 ### 提交
 
@@ -224,4 +224,4 @@ autocut
 2. 最好可以保证一次的 commit 涉及的修改比较小，可以简短地描述清楚，这样也方便之后有修改时的查找。
 3. PR 的时候 title 简述有哪些修改， contents 可以具体写下修改内容。
 4. run test `pip install pytest` then `pytest test`
-
+4. run lint `pip install black` then `black .`
