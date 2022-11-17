@@ -29,6 +29,9 @@ jobs:
           key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-py${{ matrix.python-version }}
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get install ffmpeg
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
