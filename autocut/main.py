@@ -38,8 +38,6 @@ def main():
                         action=argparse.BooleanOptionalAction)
     parser.add_argument('--force', help='Force write even if files exist',
                         action=argparse.BooleanOptionalAction)
-    parser.add_argument('--gui', help='Use GUI',
-                        action=argparse.BooleanOptionalAction)
     parser.add_argument('--encoding', type=str, default='utf-8',
                         help='Document encoding format')
     parser.add_argument('--device', type=str, default=None,
@@ -48,9 +46,7 @@ def main():
 
     args = parser.parse_args()
 
-    if args.gui:
-        os.system("streamlit run ./autocut/interface.py")
-    elif args.transcribe:
+    if args.transcribe:
         from .transcribe import Transcribe
         Transcribe(args).run()
     elif args.to_md:

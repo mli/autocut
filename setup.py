@@ -5,6 +5,8 @@ requirements = [
     'srt',
     'moviepy',
     'opencc-python-reimplemented',
+    'streamlit',
+    'numpy',
     'whisper @ git+https://github.com/openai/whisper.git'
 ]
 
@@ -24,6 +26,7 @@ setup(
     entry_points={
         'console_scripts': [
             'autocut = autocut.main:main',
+            'autocut-gui = autocut.interface.main:main'
         ]
     },
 )
