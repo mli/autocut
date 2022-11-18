@@ -77,12 +77,14 @@ class Interface:
             self.srt_contents = list(srt.parse(StringIO(self.upload_srt_tab2.getvalue().decode("utf-8"))))
             for i in range(len(self.srt_contents)):
                 self.srt_checkboxes.append(self.tab2.checkbox('删除下方字幕', key=i))
-                self.tab2.subheader(srt.compose([self.srt_contents[i]])[2:])
+                content = srt.compose([self.srt_contents[i]])[2:]
+                self.tab2.subheader(content.replace(content.split()[3], ''))
                 self.srt_raw_contents.append(
                     self.tab2.text_input('',
                                          srt.compose([self.srt_contents[i]])[2:].split()[3],
                                          label_visibility='collapsed')
                 )
+                self.tab2.progress(100)
             self.srt_edit_confirm = self.tab2.button('编辑完成')
             if self.srt_edit_confirm:
                 new_srt = []
