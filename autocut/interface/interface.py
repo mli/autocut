@@ -41,6 +41,7 @@ class Interface:
         self.tab1, self.tab2, self.tab3 = None, None, None
         self.name = None
         self.md_contents = None
+        self.srt_raw_contents = []
         self.srt_contents = None
         self.video_contents = None
 
@@ -77,12 +78,18 @@ class Interface:
             for i in range(len(self.srt_contents)):
                 self.srt_checkboxes.append(self.tab2.checkbox('删除下方字幕', key=i))
                 self.tab2.subheader(srt.compose([self.srt_contents[i]])[2:])
+                self.srt_raw_contents.append(
+                    self.tab2.text_input('',
+                                         srt.compose([self.srt_contents[i]])[2:].split()[3],
+                                         label_visibility='collapsed')
+                )
             self.srt_edit_confirm = self.tab2.button('编辑完成')
             if self.srt_edit_confirm:
                 new_srt = []
                 for i in range(len(self.srt_contents)):
                     if not self.srt_checkboxes[i]:
                         new_srt.append(self.srt_contents[i])
+                        new_srt[-1].content = self.srt_raw_contents[i]
                 for i in range(len(new_srt)):
                     new_srt[i].index = i + 1
                 self.tab2.download_button(
