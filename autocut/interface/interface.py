@@ -85,11 +85,16 @@ class Interface:
             for i in range(len(self.srt_contents)):
                 self.srt_checkboxes.append(self.tab2.checkbox("删除下方字幕", key=i))
                 content = srt.compose([self.srt_contents[i]])[2:]
-                self.tab2.subheader(content.replace(content.split()[3], ""))
+                content_list = content.split()
+                time_stamp = (
+                    content_list[0] + " " + content_list[1] + " " + content_list[2]
+                )
+                self.tab2.subheader(time_stamp)
                 self.srt_raw_contents.append(
                     self.tab2.text_input(
                         "",
-                        srt.compose([self.srt_contents[i]])[2:].split()[3],
+                        content.replace(time_stamp, ""),
+                        key=content,
                         label_visibility="collapsed",
                     )
                 )
