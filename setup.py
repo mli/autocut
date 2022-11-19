@@ -2,14 +2,14 @@ from setuptools import setup, find_packages
 import os
 
 requirements = [
-    'srt',
-    'moviepy',
-    'opencc-python-reimplemented',
-    'streamlit',
-    'numpy',
-    'torchaudio',
-    'parameterized',
-    'whisper @ git+https://github.com/openai/whisper.git'
+    "srt",
+    "moviepy",
+    "opencc-python-reimplemented",
+    "streamlit",
+    "numpy",
+    "torchaudio",
+    "parameterized",
+    "whisper @ git+https://github.com/openai/whisper.git",
 ]
 
 init_fn = os.path.join(os.path.dirname(__file__), "autocut", "__init__.py")
@@ -26,9 +26,9 @@ setup(
     python_requires=">=3.9",
     packages=find_packages(),
     entry_points={
-        'console_scripts': [
-            'autocut = autocut.main:main',
-            'autocut-gui = autocut.interface.main:main'
+        "console_scripts": [
+            "autocut = autocut.main:main",
+            "autocut-gui = autocut.interface.main:main",
         ]
     },
 )
