@@ -22,21 +22,24 @@ class Merger:
 
         md.clear()
         md.add_done_editing(False)
-        md.add('\nSelect the files that will be used to generate `autocut_final.mp4`\n')
+        md.add("\nSelect the files that will be used to generate `autocut_final.mp4`\n")
         base = lambda fn: os.path.basename(fn)
         for f in videos:
-            md_fn = utils.change_ext(f, 'md')
+            md_fn = utils.change_ext(f, "md")
             video_md = utils.MD(md_fn, self.args.encoding)
             # select a few words to scribe the video
-            desc = ''
+            desc = ""
             if len(video_md.tasks()) > 1:
                 for _, t in video_md.tasks()[1:]:
-                    m = re.findall(r'\] (.*)', t)
-                    if m and 'no speech' not in m[0].lower():
-                        desc += m[0] + ' '
+                    m = re.findall(r"\] (.*)", t)
+                    if m and "no speech" not in m[0].lower():
+                        desc += m[0] + " "
                     if len(desc) > 50:
                         break
-            md.add_task(False, f'[{base(f)}]({base(md_fn)}) {"[Edited]" if video_md.done_editing() else ""} {desc}')
+            md.add_task(
+                False,
+                f'[{base(f)}]({base(md_fn)}) {"[Edited]" if video_md.done_editing() else ""} {desc}',
+            )
         md.write()
 
     def run(self):
@@ -49,20 +52,22 @@ class Merger:
         for m, t in md.tasks():
             if not m:
                 continue
-            m = re.findall(r'\[(.*)\]', t)
+            m = re.findall(r"\[(.*)\]", t)
             if not m:
                 continue
             fn = os.path.join(os.path.dirname(md_fn), m[0])
-            logging.info(f'Loading {fn}')
+            logging.info(f"Loading {fn}")
             videos.append(editor.VideoFileClip(fn))
 
         dur = sum([v.duration for v in videos])
-        logging.info(f'Merging into a video with {dur / 60:.1f} min length')
+        logging.info(f"Merging into a video with {dur / 60:.1f} min length")
 
         merged = editor.concatenate_videoclips(videos)
-        fn = os.path.splitext(md_fn)[0] + '_merged.mp4'
-        merged.write_videofile(fn, audio_codec='aac', bitrate=self.args.bitrate)  # logger=None,
-        logging.info(f'Saved merged video to {fn}')
+        fn = os.path.splitext(md_fn)[0] + "_merged.mp4"
+        merged.write_videofile(
+            fn, audio_codec="aac", bitrate=self.args.bitrate
+        )  # logger=None,
+        logging.info(f"Saved merged video to {fn}")
 
 
 # Cut videos
@@ -71,30 +76,30 @@ class Cutter:
         self.args = args
 
     def run(self):
-        fns = {'srt': None, 'video': None, 'md': None}
+        fns = {"srt": None, "video": None, "md": None}
         for fn in self.args.inputs:
             ext = os.path.splitext(fn)[1][1:]
-            fns[ext if ext in fns else 'video'] = fn
+            fns[ext if ext in fns else "video"] = fn
 
-        assert fns['video'], 'must provide a video filename'
-        assert fns['srt'], 'must provide a srt filename'
+        assert fns["video"], "must provide a video filename"
+        assert fns["srt"], "must provide a srt filename"
 
-        output_fn = utils.change_ext(utils.add_cut(fns['video']), 'mp4')
+        output_fn = utils.change_ext(utils.add_cut(fns["video"]), "mp4")
         if utils.check_exists(output_fn, self.args.force):
             return
 
-        with open(fns['srt'], encoding=self.args.encoding) as f:
+        with open(fns["srt"], encoding=self.args.encoding) as f:
             subs = list(srt.parse(f.read()))
 
-        if fns['md']:
-            md = utils.MD(fns['md'], self.args.encoding)
+        if fns["md"]:
+            md = utils.MD(fns["md"], self.args.encoding)
             if not md.done_editing():
                 return
             index = []
             for mark, sent in md.tasks():
                 if not mark:
                     continue
-                m = re.match(r'\[(\d+)', sent.strip())
+                m = re.match(r"\[(\d+)", sent.strip())
                 if m:
                     index.append(int(m.groups()[0]))
             subs = [s for s in subs if s.index in index]
@@ -106,9 +111,11 @@ class Cutter:
         # Avoid disordered subtitles
         subs.sort(key=lambda x: x.start)
         for x in subs:
-            segments.append({'start': x.start.total_seconds(), 'end': x.end.total_seconds()})
+            segments.append(
+                {"start": x.start.total_seconds(), "end": x.end.total_seconds()}
+            )
 
-        video = editor.VideoFileClip(fns['video'])
+        video = editor.VideoFileClip(fns["video"])
 
         # Add a fade between two clips. Not quite necessary. keep code here for reference
         # fade = 0
@@ -117,14 +124,18 @@ class Cutter:
         #         s['start'], s['end']).crossfadein(fade) for s in segments]
         # final_clip = editor.concatenate_videoclips(clips, padding = -fade)
 
-        clips = [video.subclip(s['start'], s['end']) for s in segments]
+        clips = [video.subclip(s["start"], s["end"]) for s in segments]
         final_clip = editor.concatenate_videoclips(clips)
-        logging.info(f'Reduced duration from {video.duration:.1f} to {final_clip.duration:.1f}')
+        logging.info(
+            f"Reduced duration from {video.duration:.1f} to {final_clip.duration:.1f}"
+        )
 
         aud = final_clip.audio.set_fps(44100)
         final_clip = final_clip.without_audio().set_audio(aud)
         final_clip = final_clip.fx(editor.afx.audio_normalize)
 
         # an alternative to birate is use crf, e.g. ffmpeg_params=['-crf', '18']
-        final_clip.write_videofile(output_fn, audio_codec='aac', bitrate=self.args.bitrate)
-        logging.info(f'Saved video to {output_fn}')
+        final_clip.write_videofile(
+            output_fn, audio_codec="aac", bitrate=self.args.bitrate
+        )
+        logging.info(f"Saved video to {output_fn}")
