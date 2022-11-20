@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches:
-      - ci_platform
+      - main
 
 jobs:
   lint_and_test:
