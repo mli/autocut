@@ -41,4 +41,3 @@ jobs:
         run: pytest test/
       - name: Run Lint
         run: black . --check
-
