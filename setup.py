@@ -7,7 +7,7 @@ requirements = [
     "torchaudio",
     "parameterized",
     "whisper @ git+https://github.com/openai/whisper.git",
-    'tqdm',
+    "tqdm",
 ]
 
 

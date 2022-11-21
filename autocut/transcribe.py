@@ -66,7 +66,7 @@ class Transcribe:
         )
 
         logging.info(f"Done voice activity detection in {time.time() - tic:.1f} sec")
-        return speeches if len(speeches) > 1 else [{'start': 0, 'end': len(audio)}]
+        return speeches if len(speeches) > 1 else [{"start": 0, "end": len(audio)}]
 
     def _transcribe(self, audio, speech_timestamps):
         tic = time.time()
@@ -77,15 +77,18 @@ class Transcribe:
 
         res = []
         # TODO, a better way is merging these segments into a single one, so whisper can get more context
-        for seg in (speech_timestamps 
-                if len(speech_timestamps) == 1 
-                else tqdm(speech_timestamps)):
+        for seg in (
+            speech_timestamps
+            if len(speech_timestamps) == 1
+            else tqdm(speech_timestamps)
+        ):
             r = self.whisper_model.transcribe(
                 audio[int(seg["start"]) : int(seg["end"])],
                 task="transcribe",
                 language=self.args.lang,
                 initial_prompt=self.args.prompt,
-                verbose=False if len(speech_timestamps)==1 else None)
+                verbose=False if len(speech_timestamps) == 1 else None,
+            )
             r["origin_timestamp"] = seg
             res.append(r)
         logging.info(f"Done transcription in {time.time() - tic:.1f} sec")
