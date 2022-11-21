@@ -42,6 +42,8 @@ class Transcribe:
             return [{"start": 0, "end": len(audio)}]
         tic = time.time()
         if self.vad_model is None or self.detect_speech is None:
+            # torch load limit https://github.com/pytorch/vision/issues/4156
+            torch.hub._validate_not_a_forked_repo = lambda a, b, c: True
             self.vad_model, funcs = torch.hub.load(
                 repo_or_dir="snakers4/silero-vad", model="silero_vad", trust_repo=True
             )
