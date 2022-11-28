@@ -27,7 +27,7 @@ class Transcribe:
                 continue
 
             audio = whisper.load_audio(input, sr=self.sampling_rate)
-            if self.args.vad == "1" or (
+            if (self.args.vad == "1" or
                 self.args.vad == "auto" and not name.endswith("_cut")):
                 speech_timestamps = self._detect_voice_activity(audio)
             else:
@@ -56,16 +56,16 @@ class Transcribe:
             audio, self.vad_model, sampling_rate=self.sampling_rate
         )
 
-        # Merge very closed segments
-        # speeches = _merge_adjacent_segments(speeches, 0.5 * self.sampling_rate)
-
         # Remove too short segments
-        speeches = utils.remove_short_segments(speeches, 10.0 * self.sampling_rate)
+        speeches = utils.remove_short_segments(speeches, 1.0 * self.sampling_rate)
 
         # Expand to avoid to tight cut. You can tune the pad length
         speeches = utils.expand_segments(
             speeches, 0.2 * self.sampling_rate, 0.0 * self.sampling_rate, audio.shape[0]
         )
+
+        # Merge very closed segments
+        speeches = utils.merge_adjacent_segments(speeches, 0.5 * self.sampling_rate)
 
         logging.info(f"Done voice activity detection in {time.time() - tic:.1f} sec")
         return speeches
