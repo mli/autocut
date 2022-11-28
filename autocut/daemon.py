@@ -42,7 +42,8 @@ class Daemon:
                 if utils.add_cut(md_fn) in files:
                     continue
                 md = utils.MD(md_fn, self.args.encoding)
-                if not md.done_editing():
+                if not md.done_editing() or \
+                    os.path.exists(utils.change_ext(utils.add_cut(f), "mp4")):
                     continue
                 args.inputs = [f, md_fn, srt_fn]
                 cut.Cutter(args).run()
