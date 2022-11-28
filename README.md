@@ -56,17 +56,17 @@ brew install ffmpeg
 scoop install ffmpeg
 ```
 
-## Docker 安装  
+## Docker 安装
 
-首先将项目克隆到本地。  
+首先将项目克隆到本地。
 
 ```bash
 git clone https://github.com/mli/autocut.git
 ```
 
-### 安装 CPU 版本  
+### 安装 CPU 版本
 
-进入项目根目录，然后构建 docker 映像。  
+进入项目根目录，然后构建 docker 映像。
 
 ```bash
 docker build -t autocut .
@@ -78,7 +78,7 @@ docker build -t autocut .
 docker run -it --rm -v E:\autocut:/autocut/video autocut /bin/bash
 ```
 
-其中 `-v` 是将主机存放视频的文件夹 `E:\autocut` 映射到虚拟机的 `/autocut/video` 目录。`E:\autocut` 是主机存放视频的目录，需修改为自己主机存放视频的目录。  
+其中 `-v` 是将主机存放视频的文件夹 `E:\autocut` 映射到虚拟机的 `/autocut/video` 目录。`E:\autocut` 是主机存放视频的目录，需修改为自己主机存放视频的目录。
 
 ### 安装 GPU 版本
 
@@ -109,8 +109,6 @@ autocut -t 22-52-00.mp4
     ```
 
     默认是 `small`。更好的模型是 `medium` 和 `large`，但推荐使用 GPU 获得更好的速度。也可以使用更快的 `tiny` 和 `base`，但转录质量会下降。
-
-2. 如果你视频中有较多的长停顿，可以用 `--vad` 来使用格外的 VAD 模型预先识别这些停顿，使得对时间戳识别更准确。
 
 
 ### 剪切某个视频
@@ -202,9 +200,9 @@ autocut
 具体安装方式为在你搭建搭建的虚拟环境之中按照[上方安装步骤](./README.md#安装)进行安装。
 
 > 为什么推荐使用虚拟环境开发？
-> 
+>
 > 一方面是保证各种不同的开发环境之间互相不污染。
-> 
+>
 > 更重要的是在于这个项目实际上是一个 Python Package，所以在你安装之后 AutoCut 的代码实际也会变成你的环境依赖。
 > **因此在你更新代码之后，你需要让将新代码重新安装到环境中，然后才能调用到新的代码。**
 

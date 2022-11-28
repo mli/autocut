@@ -70,7 +70,9 @@ def main():
         help="The bitrate to export the cutted video, such as 10m, 1m, or 500k",
     )
     parser.add_argument(
-        "--vad", help="If or not use VAD", action=argparse.BooleanOptionalAction
+        "--vad", help="If or not use VAD",
+        choices=["1", "0", "auto"],
+        default="auto"
     )
     parser.add_argument(
         "--force",

@@ -27,7 +27,11 @@ class Transcribe:
                 continue
 
             audio = whisper.load_audio(input, sr=self.sampling_rate)
-            speech_timestamps = self._detect_voice_activity(audio)
+            if self.args.vad == "1" or (
+                self.args.vad == "auto" and not name.endswith("_cut")):
+                speech_timestamps = self._detect_voice_activity(audio)
+            else:
+                speech_timestamps = [{"start": 0, "end": len(audio)}]
             transcribe_results = self._transcribe(audio, speech_timestamps)
 
             output = name + ".srt"
@@ -38,8 +42,6 @@ class Transcribe:
 
     def _detect_voice_activity(self, audio):
         """Detect segments that have voice activities"""
-        if not self.args.vad:
-            return [{"start": 0, "end": len(audio)}]
         tic = time.time()
         if self.vad_model is None or self.detect_speech is None:
             # torch load limit https://github.com/pytorch/vision/issues/4156
