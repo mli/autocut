@@ -11,6 +11,17 @@ import whisper
 from . import utils
 
 
+from multiprocessing import Pool
+def process(whisper_model, audio, seg, lang, prompt):
+    r = whisper_model.transcribe(
+        audio[int(seg["start"]) : int(seg["end"])],
+        task="transcribe",
+        language=lang,
+        initial_prompt=prompt,
+    )
+    r["origin_timestamp"] = seg
+    return r
+
 class Transcribe:
     def __init__(self, args):
         self.args = args
@@ -69,7 +80,7 @@ class Transcribe:
 
         logging.info(f"Done voice activity detection in {time.time() - tic:.1f} sec")
         return speeches
-
+    
     def _transcribe(self, audio, speech_timestamps):
         tic = time.time()
         if self.whisper_model is None:
@@ -78,18 +89,25 @@ class Transcribe:
             )
 
         res = []
+        pool = Pool(processes=4)
         # TODO, a better way is merging these segments into a single one, so whisper can get more context
         for seg in speech_timestamps:
-            r = self.whisper_model.transcribe(
-                audio[int(seg["start"]) : int(seg["end"])],
-                task="transcribe",
-                language=self.args.lang,
-                initial_prompt=self.args.prompt,
+            res.append(
+                pool.apply_async(
+                    process, 
+                    (
+                        self.whisper_model, 
+                        audio, 
+                        seg, 
+                        self.args.lang, 
+                        self.args.prompt,
+                    )
+                )
             )
-            r["origin_timestamp"] = seg
-            res.append(r)
+        pool.close()
+        pool.join()
         logging.info(f"Done transcription in {time.time() - tic:.1f} sec")
-        return res
+        return [i.get() for i in res]
 
     def _save_srt(self, output, transcribe_results):
         subs = []
