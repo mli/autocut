@@ -12,6 +12,8 @@ from . import utils
 
 
 from multiprocessing import Pool
+
+
 def process(whisper_model, audio, seg, lang, prompt):
     r = whisper_model.transcribe(
         audio[int(seg["start"]) : int(seg["end"])],
@@ -21,6 +23,7 @@ def process(whisper_model, audio, seg, lang, prompt):
     )
     r["origin_timestamp"] = seg
     return r
+
 
 class Transcribe:
     def __init__(self, args):
@@ -38,8 +41,11 @@ class Transcribe:
                 continue
 
             audio = whisper.load_audio(input, sr=self.sampling_rate)
-            if (self.args.vad == "1" or
-                self.args.vad == "auto" and not name.endswith("_cut")):
+            if (
+                self.args.vad == "1"
+                or self.args.vad == "auto"
+                and not name.endswith("_cut")
+            ):
                 speech_timestamps = self._detect_voice_activity(audio)
             else:
                 speech_timestamps = [{"start": 0, "end": len(audio)}]
@@ -80,7 +86,7 @@ class Transcribe:
 
         logging.info(f"Done voice activity detection in {time.time() - tic:.1f} sec")
         return speeches
-    
+
     def _transcribe(self, audio, speech_timestamps):
         tic = time.time()
         if self.whisper_model is None:
@@ -94,14 +100,14 @@ class Transcribe:
         for seg in speech_timestamps:
             res.append(
                 pool.apply_async(
-                    process, 
+                    process,
                     (
-                        self.whisper_model, 
-                        audio, 
-                        seg, 
-                        self.args.lang, 
+                        self.whisper_model,
+                        audio,
+                        seg,
+                        self.args.lang,
                         self.args.prompt,
-                    )
+                    ),
                 )
             )
         pool.close()
