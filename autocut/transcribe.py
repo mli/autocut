@@ -27,8 +27,11 @@ class Transcribe:
                 continue
 
             audio = whisper.load_audio(input, sr=self.sampling_rate)
-            if (self.args.vad == "1" or
-                self.args.vad == "auto" and not name.endswith("_cut")):
+            if (
+                self.args.vad == "1"
+                or self.args.vad == "auto"
+                and not name.endswith("_cut")
+            ):
                 speech_timestamps = self._detect_voice_activity(audio)
             else:
                 speech_timestamps = [{"start": 0, "end": len(audio)}]
