@@ -60,7 +60,7 @@ def main():
         "--whisper-model",
         type=str,
         default="small",
-        choices=["tiny", "base", "small", "medium", "large"],
+        choices=["tiny", "base", "small", "medium", "large", "large-v2"],
         help="The whisper model used to transcribe.",
     )
     parser.add_argument(
@@ -70,9 +70,7 @@ def main():
         help="The bitrate to export the cutted video, such as 10m, 1m, or 500k",
     )
     parser.add_argument(
-        "--vad", help="If or not use VAD",
-        choices=["1", "0", "auto"],
-        default="auto"
+        "--vad", help="If or not use VAD", choices=["1", "0", "auto"], default="auto"
     )
     parser.add_argument(
         "--force",
