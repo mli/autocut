@@ -70,21 +70,23 @@ class Merger:
         logging.info(f"Saved merged video to {fn}")
 
 
-# Cut videos
+# Cut media
 class Cutter:
     def __init__(self, args):
         self.args = args
 
     def run(self):
-        fns = {"srt": None, "video": None, "md": None}
+        fns = {"srt": None, "media": None, "md": None}
         for fn in self.args.inputs:
             ext = os.path.splitext(fn)[1][1:]
-            fns[ext if ext in fns else "video"] = fn
+            fns[ext if ext in fns else "media"] = fn
 
-        assert fns["video"], "must provide a video filename"
+        assert fns["media"], "must provide a media filename"
         assert fns["srt"], "must provide a srt filename"
 
-        output_fn = utils.change_ext(utils.add_cut(fns["video"]), "mp4")
+        is_video_file = utils.is_video(fns["media"])
+        outext = "mp4" if is_video_file else "mp3"
+        output_fn = utils.change_ext(utils.add_cut(fns["media"]), outext)
         if utils.check_exists(output_fn, self.args.force):
             return
 
@@ -103,9 +105,9 @@ class Cutter:
                 if m:
                     index.append(int(m.groups()[0]))
             subs = [s for s in subs if s.index in index]
-            logging.info(f'Cut {fns["video"]} based on {fns["srt"]} and {fns["md"]}')
+            logging.info(f'Cut {fns["media"]} based on {fns["srt"]} and {fns["md"]}')
         else:
-            logging.info(f'Cut {fns["video"]} based on {fns["srt"]}')
+            logging.info(f'Cut {fns["media"]} based on {fns["srt"]}')
 
         segments = []
         # Avoid disordered subtitles
@@ -115,7 +117,10 @@ class Cutter:
                 {"start": x.start.total_seconds(), "end": x.end.total_seconds()}
             )
 
-        video = editor.VideoFileClip(fns["video"])
+        if is_video_file:
+            media = editor.VideoFileClip(fns["media"])
+        else:
+            media = editor.AudioFileClip(fns["media"])
 
         # Add a fade between two clips. Not quite necessary. keep code here for reference
         # fade = 0
@@ -124,18 +129,27 @@ class Cutter:
         #         s['start'], s['end']).crossfadein(fade) for s in segments]
         # final_clip = editor.concatenate_videoclips(clips, padding = -fade)
 
-        clips = [video.subclip(s["start"], s["end"]) for s in segments]
-        final_clip = editor.concatenate_videoclips(clips)
-        logging.info(
-            f"Reduced duration from {video.duration:.1f} to {final_clip.duration:.1f}"
-        )
+        clips = [media.subclip(s["start"], s["end"]) for s in segments]
+        if is_video_file:
+            final_clip: editor.VideoClip = editor.concatenate_videoclips(clips)
+            aud = final_clip.audio.set_fps(44100)
+            final_clip = final_clip.without_audio().set_audio(aud)
+            final_clip = final_clip.fx(editor.afx.audio_normalize)
+            logging.info(
+                f"Reduced duration from {media.duration:.1f} to {final_clip.duration:.1f}"
+            )
+            # an alternative to birate is use crf, e.g. ffmpeg_params=['-crf', '18']
+            final_clip.write_videofile(
+                output_fn, audio_codec="aac", bitrate=self.args.bitrate
+            )
+        else:
+            final_clip: editor.AudioClip = editor.concatenate_audioclips(clips)
+            final_clip = final_clip.fx(editor.afx.audio_normalize)
+            logging.info(
+                f"Reduced duration from {media.duration:.1f} to {final_clip.duration:.1f}"
+            )
+            final_clip.write_audiofile(
+                output_fn, codec="libmp3lame", fps=44100, bitrate=self.args.bitrate
+            )
 
-        aud = final_clip.audio.set_fps(44100)
-        final_clip = final_clip.without_audio().set_audio(aud)
-        final_clip = final_clip.fx(editor.afx.audio_normalize)
-
-        # an alternative to birate is use crf, e.g. ffmpeg_params=['-crf', '18']
-        final_clip.write_videofile(
-            output_fn, audio_codec="aac", bitrate=self.args.bitrate
-        )
-        logging.info(f"Saved video to {output_fn}")
+        logging.info(f"Saved media to {output_fn}")

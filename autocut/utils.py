@@ -11,6 +11,11 @@ def is_video(filename):
     return ext in [".mp4", ".mov", ".mkv", ".avi", ".flv", ".f4v", ".webm"]
 
 
+def is_audio(filename):
+    _, ext = os.path.splitext(filename)
+    return ext in [".ogg", ".wav", ".mp3", ".flac", ".m4a"]
+
+
 def change_ext(filename, new_ext):
     # Change the extension of filename to new_ext
     base, _ = os.path.splitext(filename)
