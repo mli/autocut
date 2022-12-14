@@ -111,9 +111,17 @@ class Cutter:
         # Avoid disordered subtitles
         subs.sort(key=lambda x: x.start)
         for x in subs:
-            segments.append(
-                {"start": x.start.total_seconds(), "end": x.end.total_seconds()}
-            )
+            if len(segments) == 0:
+                segments.append(
+                    {"start": x.start.total_seconds(), "end": x.end.total_seconds()}
+                )
+            else:
+                if x.start.total_seconds() - segments[-1]["end"] < 0.5:
+                    segments[-1]["end"] = x.end.total_seconds()
+                else:
+                    segments.append(
+                        {"start": x.start.total_seconds(), "end": x.end.total_seconds()}
+                    )
 
         video = editor.VideoFileClip(fns["video"])
 
@@ -138,4 +146,5 @@ class Cutter:
         final_clip.write_videofile(
             output_fn, audio_codec="aac", bitrate=self.args.bitrate
         )
+        video.close()
         logging.info(f"Saved video to {output_fn}")
