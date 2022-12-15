@@ -113,9 +113,17 @@ class Cutter:
         # Avoid disordered subtitles
         subs.sort(key=lambda x: x.start)
         for x in subs:
-            segments.append(
-                {"start": x.start.total_seconds(), "end": x.end.total_seconds()}
-            )
+            if len(segments) == 0:
+                segments.append(
+                    {"start": x.start.total_seconds(), "end": x.end.total_seconds()}
+                )
+            else:
+                if x.start.total_seconds() - segments[-1]["end"] < 0.5:
+                    segments[-1]["end"] = x.end.total_seconds()
+                else:
+                    segments.append(
+                        {"start": x.start.total_seconds(), "end": x.end.total_seconds()}
+                    )
 
         if is_video_file:
             media = editor.VideoFileClip(fns["media"])
@@ -132,24 +140,28 @@ class Cutter:
         clips = [media.subclip(s["start"], s["end"]) for s in segments]
         if is_video_file:
             final_clip: editor.VideoClip = editor.concatenate_videoclips(clips)
-            aud = final_clip.audio.set_fps(44100)
-            final_clip = final_clip.without_audio().set_audio(aud)
-            final_clip = final_clip.fx(editor.afx.audio_normalize)
             logging.info(
                 f"Reduced duration from {media.duration:.1f} to {final_clip.duration:.1f}"
             )
+
+            aud = final_clip.audio.set_fps(44100)
+            final_clip = final_clip.without_audio().set_audio(aud)
+            final_clip = final_clip.fx(editor.afx.audio_normalize)
+
             # an alternative to birate is use crf, e.g. ffmpeg_params=['-crf', '18']
             final_clip.write_videofile(
                 output_fn, audio_codec="aac", bitrate=self.args.bitrate
             )
         else:
             final_clip: editor.AudioClip = editor.concatenate_audioclips(clips)
-            final_clip = final_clip.fx(editor.afx.audio_normalize)
             logging.info(
                 f"Reduced duration from {media.duration:.1f} to {final_clip.duration:.1f}"
             )
+
+            final_clip = final_clip.fx(editor.afx.audio_normalize)
             final_clip.write_audiofile(
                 output_fn, codec="libmp3lame", fps=44100, bitrate=self.args.bitrate
             )
 
+        media.close()
         logging.info(f"Saved media to {output_fn}")

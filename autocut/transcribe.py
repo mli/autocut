@@ -11,6 +11,17 @@ import whisper
 from . import utils
 
 
+def process(whisper_model, audio, seg, lang, prompt):
+    r = whisper_model.transcribe(
+        audio[int(seg["start"]) : int(seg["end"])],
+        task="transcribe",
+        language=lang,
+        initial_prompt=prompt,
+    )
+    r["origin_timestamp"] = seg
+    return r
+
+
 class Transcribe:
     def __init__(self, args):
         self.args = args
@@ -81,18 +92,40 @@ class Transcribe:
             )
 
         res = []
-        # TODO, a better way is merging these segments into a single one, so whisper can get more context
-        for seg in speech_timestamps:
-            r = self.whisper_model.transcribe(
-                audio[int(seg["start"]) : int(seg["end"])],
-                task="transcribe",
-                language=self.args.lang,
-                initial_prompt=self.args.prompt,
-            )
-            r["origin_timestamp"] = seg
-            res.append(r)
-        logging.info(f"Done transcription in {time.time() - tic:.1f} sec")
-        return res
+        if self.args.device == "cpu":
+            from multiprocessing import Pool
+
+            pool = Pool(processes=4)
+            # TODO, a better way is merging these segments into a single one, so whisper can get more context
+            for seg in speech_timestamps:
+                res.append(
+                    pool.apply_async(
+                        process,
+                        (
+                            self.whisper_model,
+                            audio,
+                            seg,
+                            self.args.lang,
+                            self.args.prompt,
+                        ),
+                    )
+                )
+            pool.close()
+            pool.join()
+            logging.info(f"Done transcription in {time.time() - tic:.1f} sec")
+            return [i.get() for i in res]
+        else:
+            for seg in speech_timestamps:
+                r = self.whisper_model.transcribe(
+                    audio[int(seg["start"]) : int(seg["end"])],
+                    task="transcribe",
+                    language=self.args.lang,
+                    initial_prompt=self.args.prompt,
+                )
+                r["origin_timestamp"] = seg
+                res.append(r)
+            logging.info(f"Done transcription in {time.time() - tic:.1f} sec")
+            return res
 
     def _save_srt(self, output, transcribe_results):
         subs = []
