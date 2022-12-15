@@ -115,7 +115,7 @@ class TestTranscribe(unittest.TestCase):
         transcribe = Transcribe(args)
         transcribe.run()
         with open(
-            os.path.exists(TEST_VIDEO_PATH + file_name.split(".")[0] + ".md"),
+            os.path.join(TEST_VIDEO_PATH + file_name.split(".")[0] + ".md"),
             encoding="gbk",
         ):
             self.assertTrue(True)

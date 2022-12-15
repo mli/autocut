@@ -13,6 +13,17 @@ from tqdm import tqdm
 from . import utils
 
 
+def process(whisper_model, audio, seg, lang, prompt):
+    r = whisper_model.transcribe(
+        audio[int(seg["start"]) : int(seg["end"])],
+        task="transcribe",
+        language=lang,
+        initial_prompt=prompt,
+    )
+    r["origin_timestamp"] = seg
+    return r
+
+
 class Transcribe:
     def __init__(self, args):
         self.args = args
@@ -29,7 +40,14 @@ class Transcribe:
                 continue
 
             audio = whisper.load_audio(input, sr=self.sampling_rate)
-            speech_timestamps = self._detect_voice_activity(audio)
+            if (
+                self.args.vad == "1"
+                or self.args.vad == "auto"
+                and not name.endswith("_cut")
+            ):
+                speech_timestamps = self._detect_voice_activity(audio)
+            else:
+                speech_timestamps = [{"start": 0, "end": len(audio)}]
             transcribe_results = self._transcribe(audio, speech_timestamps)
 
             output = name + ".srt"
@@ -40,10 +58,10 @@ class Transcribe:
 
     def _detect_voice_activity(self, audio):
         """Detect segments that have voice activities"""
-        if not self.args.vad:
-            return [{"start": 0, "end": len(audio)}]
         tic = time.time()
         if self.vad_model is None or self.detect_speech is None:
+            # torch load limit https://github.com/pytorch/vision/issues/4156
+            torch.hub._validate_not_a_forked_repo = lambda a, b, c: True
             self.vad_model, funcs = torch.hub.load(
                 repo_or_dir="snakers4/silero-vad", model="silero_vad", trust_repo=True
             )
@@ -54,16 +72,16 @@ class Transcribe:
             audio, self.vad_model, sampling_rate=self.sampling_rate
         )
 
-        # Merge very closed segments
-        # speeches = _merge_adjacent_segments(speeches, 0.5 * self.sampling_rate)
-
         # Remove too short segments
-        speeches = utils.remove_short_segments(speeches, 10.0 * self.sampling_rate)
+        speeches = utils.remove_short_segments(speeches, 1.0 * self.sampling_rate)
 
         # Expand to avoid to tight cut. You can tune the pad length
         speeches = utils.expand_segments(
             speeches, 0.2 * self.sampling_rate, 0.0 * self.sampling_rate, audio.shape[0]
         )
+
+        # Merge very closed segments
+        speeches = utils.merge_adjacent_segments(speeches, 0.5 * self.sampling_rate)
 
         logging.info(f"Done voice activity detection in {time.time() - tic:.1f} sec")
         return speeches if len(speeches) > 1 else [{"start": 0, "end": len(audio)}]
@@ -76,23 +94,49 @@ class Transcribe:
             )
 
         res = []
-        # TODO, a better way is merging these segments into a single one, so whisper can get more context
-        for seg in (
-            speech_timestamps
-            if len(speech_timestamps) == 1
-            else tqdm(speech_timestamps)
-        ):
-            r = self.whisper_model.transcribe(
-                audio[int(seg["start"]) : int(seg["end"])],
-                task="transcribe",
-                language=self.args.lang,
-                initial_prompt=self.args.prompt,
-                verbose=False if len(speech_timestamps) == 1 else None,
-            )
-            r["origin_timestamp"] = seg
-            res.append(r)
-        logging.info(f"Done transcription in {time.time() - tic:.1f} sec")
-        return res
+        if self.args.device == "cpu" and len(speech_timestamps) > 1:
+            from multiprocessing import Pool
+
+            pbar = tqdm(total=len(speech_timestamps))
+            
+            pool = Pool(processes=4)
+            # TODO, a better way is merging these segments into a single one, so whisper can get more context
+            for seg in speech_timestamps:
+                res.append(
+                    pool.apply_async(
+                        process,
+                        (
+                            self.whisper_model,
+                            audio,
+                            seg,
+                            self.args.lang,
+                            self.args.prompt,
+                        ),
+                        callback=lambda x: pbar.update(),
+                    )
+                )
+            pool.close()
+            pool.join()
+            pbar.close()
+            logging.info(f"Done transcription in {time.time() - tic:.1f} sec")
+            return [i.get() for i in res]
+        else:
+            for seg in (
+                speech_timestamps
+                if len(speech_timestamps) == 1
+                else tqdm(speech_timestamps)
+            ):
+                r = self.whisper_model.transcribe(
+                    audio[int(seg["start"]) : int(seg["end"])],
+                    task="transcribe",
+                    language=self.args.lang,
+                    initial_prompt=self.args.prompt,
+                    verbose=False if len(speech_timestamps) == 1 else None,
+                )
+                r["origin_timestamp"] = seg
+                res.append(r)
+            logging.info(f"Done transcription in {time.time() - tic:.1f} sec")
+            return res
 
     def _save_srt(self, output, transcribe_results):
         subs = []
