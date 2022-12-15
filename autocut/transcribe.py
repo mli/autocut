@@ -98,7 +98,7 @@ class Transcribe:
             from multiprocessing import Pool
 
             pbar = tqdm(total=len(speech_timestamps))
-            
+
             pool = Pool(processes=4)
             # TODO, a better way is merging these segments into a single one, so whisper can get more context
             for seg in speech_timestamps:
