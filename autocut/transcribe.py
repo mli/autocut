@@ -8,6 +8,8 @@ import srt
 import torch
 import whisper
 
+from tqdm import tqdm
+
 from . import utils
 
 
@@ -82,7 +84,7 @@ class Transcribe:
         speeches = utils.merge_adjacent_segments(speeches, 0.5 * self.sampling_rate)
 
         logging.info(f"Done voice activity detection in {time.time() - tic:.1f} sec")
-        return speeches
+        return speeches if len(speeches) > 1 else [{"start": 0, "end": len(audio)}]
 
     def _transcribe(self, audio, speech_timestamps):
         tic = time.time()
@@ -92,8 +94,10 @@ class Transcribe:
             )
 
         res = []
-        if self.args.device == "cpu":
+        if self.args.device == "cpu" and len(speech_timestamps) > 1:
             from multiprocessing import Pool
+
+            pbar = tqdm(total=len(speech_timestamps))
 
             pool = Pool(processes=4)
             # TODO, a better way is merging these segments into a single one, so whisper can get more context
@@ -108,19 +112,26 @@ class Transcribe:
                             self.args.lang,
                             self.args.prompt,
                         ),
+                        callback=lambda x: pbar.update(),
                     )
                 )
             pool.close()
             pool.join()
+            pbar.close()
             logging.info(f"Done transcription in {time.time() - tic:.1f} sec")
             return [i.get() for i in res]
         else:
-            for seg in speech_timestamps:
+            for seg in (
+                speech_timestamps
+                if len(speech_timestamps) == 1
+                else tqdm(speech_timestamps)
+            ):
                 r = self.whisper_model.transcribe(
                     audio[int(seg["start"]) : int(seg["end"])],
                     task="transcribe",
                     language=self.args.lang,
                     initial_prompt=self.args.prompt,
+                    verbose=False if len(speech_timestamps) == 1 else None,
                 )
                 r["origin_timestamp"] = seg
                 res.append(r)
