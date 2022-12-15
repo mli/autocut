@@ -22,11 +22,12 @@ class Daemon:
     def _iter(self):
         folder = self.args.inputs[0]
         files = sorted(list(glob.glob(os.path.join(folder, "*"))))
-        videos = [f for f in files if utils.is_video(f)]
+        media_files = [f for f in files if utils.is_video(f) or utils.is_audio(f)]
         args = copy.deepcopy(self.args)
-        for f in videos:
+        for f in media_files:
             srt_fn = utils.change_ext(f, "srt")
             md_fn = utils.change_ext(f, "md")
+            is_video_file = utils.is_video(f)
             if srt_fn not in files or md_fn not in files:
                 args.inputs = [f]
                 try:
@@ -42,16 +43,16 @@ class Daemon:
                 if utils.add_cut(md_fn) in files:
                     continue
                 md = utils.MD(md_fn, self.args.encoding)
+                ext = "mp4" if is_video_file else "mp3"
                 if not md.done_editing() or os.path.exists(
-                    utils.change_ext(utils.add_cut(f), "mp4")
+                    utils.change_ext(utils.add_cut(f), ext)
                 ):
                     continue
                 args.inputs = [f, md_fn, srt_fn]
                 cut.Cutter(args).run()
                 self.sleep = 1
-                break
 
         args.inputs = [os.path.join(folder, "autocut.md")]
         merger = cut.Merger(args)
-        merger.write_md(videos)
+        merger.write_md(media_files)
         merger.run()

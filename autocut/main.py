@@ -60,7 +60,7 @@ def main():
         "--whisper-model",
         type=str,
         default="small",
-        choices=["tiny", "base", "small", "medium", "large"],
+        choices=["tiny", "base", "small", "medium", "large", "large-v2"],
         help="The whisper model used to transcribe.",
     )
     parser.add_argument(
