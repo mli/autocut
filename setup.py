@@ -6,7 +6,7 @@ requirements = [
     "opencc-python-reimplemented",
     "torchaudio",
     "parameterized",
-    "whisper @ git+https://github.com/openai/whisper.git",
+    "openai-whisper",
     "tqdm",
 ]
 
