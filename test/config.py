@@ -35,6 +35,7 @@ TEST_MEDIA_FILE = [
     "test003.mkv",
     "test004.flv",
     "test005.mp3",
+    "test006.MP4",
 ]
 
 TEST_MEDIA_FILE_LANG = ["test001_en.mp4"]

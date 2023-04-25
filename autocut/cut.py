@@ -84,7 +84,7 @@ class Cutter:
         assert fns["media"], "must provide a media filename"
         assert fns["srt"], "must provide a srt filename"
 
-        is_video_file = utils.is_video(fns["media"])
+        is_video_file = utils.is_video(fns["media"].lower())
         outext = "mp4" if is_video_file else "mp3"
         output_fn = utils.change_ext(utils.add_cut(fns["media"]), outext)
         if utils.check_exists(output_fn, self.args.force):
