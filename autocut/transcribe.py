@@ -8,8 +8,6 @@ import srt
 import torch
 from faster_whisper import WhisperModel, decode_audio as load_audio
 
-#from tqdm import tqdm
-
 from . import utils
 
 
