@@ -50,7 +50,7 @@ class TestArgs:
         lang="zh",
         prompt="",
         whisper_model="tiny",
-        device='cuda',
+        device='cpu',
         vad=False,
         force=False,
     ):

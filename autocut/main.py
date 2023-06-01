@@ -83,7 +83,7 @@ def main():
     parser.add_argument(
         "--device",
         type=str,
-        default="cuda",
+        default="cpu",
         choices=["cpu", "cuda"],
         help="Force to CPU or GPU for transcribing. In default automatically use GPU if available.",
     )
