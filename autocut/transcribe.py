@@ -79,9 +79,6 @@ class Transcribe:
     def _transcribe(self, audio, speech_timestamps):
         tic = time.time()
         if self.whisper_model is None:
-            # self.whisper_model = whisper.load_model(
-            #     self.args.whisper_model, self.args.device
-            # )
             self.whisper_model = WhisperModel(
                 self.args.whisper_model, self.args.device
             )

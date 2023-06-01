@@ -49,8 +49,8 @@ class TestArgs:
         bitrate="10m",
         lang="zh",
         prompt="",
-        whisper_model="small",
-        device=None,
+        whisper_model="tiny",
+        device='cuda',
         vad=False,
         force=False,
     ):
