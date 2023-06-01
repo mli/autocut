@@ -6,22 +6,11 @@ import time
 import opencc
 import srt
 import torch
-import whisper
+from faster_whisper import WhisperModel, decode_audio as load_audio
 
-from tqdm import tqdm
+#from tqdm import tqdm
 
 from . import utils
-
-
-def process(whisper_model, audio, seg, lang, prompt):
-    r = whisper_model.transcribe(
-        audio[int(seg["start"]) : int(seg["end"])],
-        task="transcribe",
-        language=lang,
-        initial_prompt=prompt,
-    )
-    r["origin_timestamp"] = seg
-    return r
 
 
 class Transcribe:
@@ -39,7 +28,8 @@ class Transcribe:
             if utils.check_exists(name + ".md", self.args.force):
                 continue
 
-            audio = whisper.load_audio(input, sr=self.sampling_rate)
+            # audio = whisper.load_audio(input, sr=self.sampling_rate)
+            audio = load_audio(input, sampling_rate=self.sampling_rate)
             if (
                 self.args.vad == "1"
                 or self.args.vad == "auto"
@@ -89,56 +79,32 @@ class Transcribe:
     def _transcribe(self, audio, speech_timestamps):
         tic = time.time()
         if self.whisper_model is None:
-            self.whisper_model = whisper.load_model(
+            # self.whisper_model = whisper.load_model(
+            #     self.args.whisper_model, self.args.device
+            # )
+            self.whisper_model = WhisperModel(
                 self.args.whisper_model, self.args.device
             )
 
         res = []
-        if self.args.device == "cpu" and len(speech_timestamps) > 1:
-            from multiprocessing import Pool
-
-            pbar = tqdm(total=len(speech_timestamps))
-
-            pool = Pool(processes=4)
-            # TODO, a better way is merging these segments into a single one, so whisper can get more context
-            for seg in speech_timestamps:
-                res.append(
-                    pool.apply_async(
-                        process,
-                        (
-                            self.whisper_model,
-                            audio,
-                            seg,
-                            self.args.lang,
-                            self.args.prompt,
-                        ),
-                        callback=lambda x: pbar.update(),
-                    )
-                )
-            pool.close()
-            pool.join()
-            pbar.close()
-            logging.info(f"Done transcription in {time.time() - tic:.1f} sec")
-            return [i.get() for i in res]
-        else:
-            for seg in (
-                speech_timestamps
-                if len(speech_timestamps) == 1
-                else tqdm(speech_timestamps)
-            ):
-                r = self.whisper_model.transcribe(
-                    audio[int(seg["start"]) : int(seg["end"])],
-                    task="transcribe",
-                    language=self.args.lang,
-                    initial_prompt=self.args.prompt,
-                    verbose=False if len(speech_timestamps) == 1 else None,
-                )
-                r["origin_timestamp"] = seg
-                res.append(r)
-            logging.info(f"Done transcription in {time.time() - tic:.1f} sec")
-            return res
+        for seg in speech_timestamps:
+            segments, info = self.whisper_model.transcribe(
+                audio[int(seg["start"]): int(seg["end"])],
+                task="transcribe",
+                language=self.args.lang,
+                initial_prompt=self.args.prompt,
+                # verbose=False if len(speech_timestamps) == 1 else None,
+            )
+            r = {}
+            r["origin_timestamp"] = seg
+            r["segments"] = segments
+            r["info"] = info
+            res.append(r)
+        logging.info(f"Done transcription in {time.time() - tic:.1f} sec")
+        return res
 
     def _save_srt(self, output, transcribe_results):
+        print(transcribe_results)
         subs = []
         # whisper sometimes generate traditional chinese, explicitly convert
         cc = opencc.OpenCC("t2s")
@@ -157,6 +123,7 @@ class Transcribe:
         for r in transcribe_results:
             origin = r["origin_timestamp"]
             for s in r["segments"]:
+                print("[%.2fs -> %.2fs] %s" % (s.start, s.end, s.text))
                 start = s["start"] + origin["start"] / self.sampling_rate
                 end = min(
                     s["end"] + origin["start"] / self.sampling_rate,
