@@ -104,7 +104,6 @@ class Transcribe:
         return res
 
     def _save_srt(self, output, transcribe_results):
-        print(transcribe_results)
         subs = []
         # whisper sometimes generate traditional chinese, explicitly convert
         cc = opencc.OpenCC("t2s")
@@ -122,8 +121,8 @@ class Transcribe:
         prev_end = 0
         for r in transcribe_results:
             origin = r["origin_timestamp"]
-            for s in r["segments"]:
-                print("[%.2fs -> %.2fs] %s" % (s.start, s.end, s.text))
+            for seg in r["segments"]:
+                s = dict(start=seg.start, end=seg.end, text=seg.text)
                 start = s["start"] + origin["start"] / self.sampling_rate
                 end = min(
                     s["end"] + origin["start"] / self.sampling_rate,
