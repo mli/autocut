@@ -6,7 +6,7 @@ requirements = [
     "opencc-python-reimplemented",
     "torchaudio",
     "parameterized",
-    "openai-whisper",
+    "openai-whisper==20230314",
     "tqdm",
 ]
 
