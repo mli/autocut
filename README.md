@@ -170,8 +170,6 @@ autocut -c 22-52-00.mp4 22-52-00.srt 22-52-00.md
 
 4. **能不能使用 `pip` 安装?**
 
-   ~~因为 AutoCut 的依赖 whisper 没有在 PyPI 发布包，所以目前只能用 `pip install git+https://github.com/mli/autocut.git` 这种方式发布。有需求的同学可以查看 whisper 模型是不是能直接在 huggingface hub 下载，从而摆脱 whisper 包的依赖。~~
- 
     whisper已经发布到PyPI了，可以直接用`pip install openai-whisper`安装。
    
    [https://github.com/openai/whisper#setup](https://github.com/openai/whisper#setup)
