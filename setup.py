@@ -4,6 +4,8 @@ requirements = [
     "srt",
     "moviepy",
     "opencc-python-reimplemented",
+    "streamlit",
+    "numpy",
     "torchaudio",
     "parameterized",
     "openai-whisper",
@@ -18,6 +20,7 @@ setup(
     entry_points={
         "console_scripts": [
             "autocut = autocut.main:main",
+            "autocut-gui = autocut.interface.main:main",
         ]
     },
 )
