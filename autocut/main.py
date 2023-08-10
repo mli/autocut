@@ -164,7 +164,7 @@ def main():
         elif len(args.inputs) == 1:
             trans_srt_to_md(args.encoding, args.force, args.inputs[0])
         else:
-            logging.warn(
+            logging.warning(
                 "Wrong number of files, please pass in a .srt file or an additional video file"
             )
     elif args.cut:
