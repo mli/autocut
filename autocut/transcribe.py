@@ -1,17 +1,14 @@
-import datetime
 import logging
 import os
 import time
-from typing import List
+from typing import List, Any
 
 import numpy as np
-import opencc
-from pydub import AudioSegment
 import srt
 import torch
 
 from . import utils, whisper_model
-from .type import WhisperMode, SPEECH_TIMESTAMP
+from .type import WhisperMode, SPEECH_ARRAY_INDEX
 
 
 class Transcribe:
@@ -22,6 +19,18 @@ class Transcribe:
         self.vad_model = None
         self.detect_speech = None
 
+        tic = time.time()
+        if self.whisper_model is None:
+            if self.args.whisper_mode == WhisperMode.WHISPER.value:
+                self.whisper_model = whisper_model.WhisperModel(self.sampling_rate)
+                self.whisper_model.load(self.args.whisper_model, self.args.device)
+            elif self.args.whisper_mode == WhisperMode.OPENAI.value:
+                self.whisper_model = whisper_model.OpenAIModel(
+                    sample_rate=self.sampling_rate
+                )
+                self.whisper_model.load()
+        logging.info(f"Done Init model in {time.time() - tic:.1f} sec")
+
     def run(self):
         for input in self.args.inputs:
             logging.info(f"Transcribing {input}")
@@ -30,9 +39,8 @@ class Transcribe:
                 continue
 
             audio = utils.load_audio(input, sr=self.sampling_rate)
-            raw_audio = AudioSegment.from_file(input)
-            speech_timestamps = self._detect_voice_activity(audio)
-            transcribe_results = self._transcribe(raw_audio, audio, speech_timestamps)
+            speech_array_indices = self._detect_voice_activity(audio)
+            transcribe_results = self._transcribe(input, audio, speech_array_indices)
 
             output = name + ".srt"
             self._save_srt(output, transcribe_results)
@@ -40,7 +48,7 @@ class Transcribe:
             self._save_md(name + ".md", output, input)
             logging.info(f'Saved texts to {name + ".md"} to mark sentences')
 
-    def _detect_voice_activity(self, audio) -> List[SPEECH_TIMESTAMP]:
+    def _detect_voice_activity(self, audio) -> List[SPEECH_ARRAY_INDEX]:
         """Detect segments that have voice activities"""
         if self.args.vad == "0":
             return [{"start": 0, "end": len(audio)}]
@@ -75,58 +83,27 @@ class Transcribe:
 
     def _transcribe(
         self,
-        raw_audio: AudioSegment,
+        input: str,
         audio: np.ndarray,
-        speech_timestamps: List[SPEECH_TIMESTAMP],
-    ):
+        speech_array_indices: List[SPEECH_ARRAY_INDEX],
+    ) -> List[Any]:
         tic = time.time()
-        if self.whisper_model is None:
-            if self.args.mode == WhisperMode.WHISPER.value:
-                self.whisper_model = whisper_model.WhisperModel()
-                self.whisper_model.load(self.args.whisper_model, self.args.device)
-            elif self.args.mode == WhisperMode.OPENAI.value:
-                self.whisper_model = whisper_model.OpenAIModel()
-                self.whisper_model.load()
-
-        res = self.whisper_model.transcribe(
-            raw_audio, audio, speech_timestamps, self.args.lang, self.args.prompt
+        res = (
+            self.whisper_model.transcribe(
+                audio, speech_array_indices, self.args.lang, self.args.prompt
+            )
+            if self.args.whisper_mode == WhisperMode.WHISPER.value
+            else self.whisper_model.transcribe(
+                input, audio, speech_array_indices, self.args.lang, self.args.prompt
+            )
         )
 
         logging.info(f"Done transcription in {time.time() - tic:.1f} sec")
         return res
 
     def _save_srt(self, output, transcribe_results):
-        subs = []
-        # whisper sometimes generate traditional chinese, explicitly convert
-        cc = opencc.OpenCC("t2s")
-
-        def _add_sub(start, end, text):
-            subs.append(
-                srt.Subtitle(
-                    index=0,
-                    start=datetime.timedelta(seconds=start),
-                    end=datetime.timedelta(seconds=end),
-                    content=cc.convert(text.strip()),
-                )
-            )
-
-        prev_end = 0
-        for r in transcribe_results:
-            origin = r["origin_timestamp"]
-            for s in r["segments"]:
-                start = s["start"] + origin["start"] / self.sampling_rate
-                end = min(
-                    s["end"] + origin["start"] / self.sampling_rate,
-                    origin["end"] / self.sampling_rate,
-                )
-                if start > end:
-                    continue
-                # mark any empty segment that is not very short
-                if start > prev_end + 1.0:
-                    _add_sub(prev_end, start, "< No Speech >")
-                _add_sub(start, end, s["text"])
-                prev_end = end
-
+        subs = self.whisper_model.gen_srt(transcribe_results)
+        print(subs)
         with open(output, "wb") as f:
             f.write(srt.compose(subs).encode(self.args.encoding, "replace"))
 

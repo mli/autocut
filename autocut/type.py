@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import TypedDict, Literal
 
-SPEECH_TIMESTAMP = TypedDict("SPEECH_TIMESTAMP", {"start": float, "end": float})
+SPEECH_ARRAY_INDEX = TypedDict("SPEECH_ARRAY_INDEX", {"start": float, "end": float})
 
 LANG = Literal[
     "zh",

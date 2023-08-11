@@ -54,7 +54,7 @@ class TestArgs:
         device=None,
         vad=False,
         force=False,
-        mode="whisper",
+        whisper_mode="whisper",
     ):
         self.inputs = []
         self.bitrate = bitrate
@@ -66,4 +66,4 @@ class TestArgs:
         self.device = device
         self.vad = vad
         self.force = force
-        self.mode = mode
+        self.whisper_mode = whisper_mode

@@ -1,17 +1,25 @@
+import datetime
+import os
 from abc import ABC, abstractmethod
-from typing import Literal, Union, List
+from typing import Literal, Union, List, Any
 
 import numpy as np
+import opencc
+import srt
 from pydub import AudioSegment
 from tqdm import tqdm
 
-from .type import SPEECH_TIMESTAMP, LANG
+from .type import SPEECH_ARRAY_INDEX, LANG
+
+# whisper sometimes generate traditional chinese, explicitly convert
+cc = opencc.OpenCC("t2s")
 
 
 class AbstractWhisperModel(ABC):
-    def __init__(self, mode):
+    def __init__(self, mode, sample_rate=16000):
         self.mode = mode
         self.whisper_model = None
+        self.sample_rate = sample_rate
 
     @abstractmethod
     def load(self, *args, **kwargs):
@@ -21,10 +29,14 @@ class AbstractWhisperModel(ABC):
     def transcribe(self, *args, **kwargs):
         pass
 
+    @abstractmethod
+    def gen_srt(self, transcribe_results: List[Any]) -> List[srt.Subtitle]:
+        pass
+
 
 class WhisperModel(AbstractWhisperModel):
-    def __init__(self):
-        super().__init__("whisper")
+    def __init__(self, sample_rate=16000):
+        super().__init__("whisper", sample_rate)
         self.device = None
 
     def load(
@@ -52,22 +64,21 @@ class WhisperModel(AbstractWhisperModel):
 
     def transcribe(
         self,
-        raw_audio: AudioSegment,
         audio: np.ndarray,
-        speech_timestamps: List[SPEECH_TIMESTAMP],
+        speech_array_indices: List[SPEECH_ARRAY_INDEX],
         lang: LANG,
         prompt: str,
     ):
         res = []
-        if self.device == "cpu" and len(speech_timestamps) > 1:
+        if self.device == "cpu" and len(speech_array_indices) > 1:
             from multiprocessing import Pool
 
-            pbar = tqdm(total=len(speech_timestamps))
+            pbar = tqdm(total=len(speech_array_indices))
 
             pool = Pool(processes=4)
             sub_res = []
             # TODO, a better way is merging these segments into a single one, so whisper can get more context
-            for seg in speech_timestamps:
+            for seg in speech_array_indices:
                 sub_res.append(
                     pool.apply_async(
                         self._process,
@@ -87,30 +98,66 @@ class WhisperModel(AbstractWhisperModel):
             res = [i.get() for i in sub_res]
         else:
             for seg in (
-                speech_timestamps
-                if len(speech_timestamps) == 1
-                else tqdm(speech_timestamps)
+                speech_array_indices
+                if len(speech_array_indices) == 1
+                else tqdm(speech_array_indices)
             ):
                 r = self.whisper_model.transcribe(
                     audio[int(seg["start"]) : int(seg["end"])],
                     task="transcribe",
                     language=lang,
                     initial_prompt=prompt,
-                    verbose=False if len(speech_timestamps) == 1 else None,
+                    verbose=False if len(speech_array_indices) == 1 else None,
                 )
                 r["origin_timestamp"] = seg
                 res.append(r)
         return res
 
+    def gen_srt(self, transcribe_results):
+        subs = []
+
+        def _add_sub(start, end, text):
+            subs.append(
+                srt.Subtitle(
+                    index=0,
+                    start=datetime.timedelta(seconds=start),
+                    end=datetime.timedelta(seconds=end),
+                    content=cc.convert(text.strip()),
+                )
+            )
+
+        prev_end = 0
+        for r in transcribe_results:
+            origin = r["origin_timestamp"]
+            for s in r["segments"]:
+                start = s["start"] + origin["start"] / self.sample_rate
+                end = min(
+                    s["end"] + origin["start"] / self.sample_rate,
+                    origin["end"] / self.sample_rate,
+                )
+                if start > end:
+                    continue
+                # mark any empty segment that is not very short
+                if start > prev_end + 1.0:
+                    _add_sub(prev_end, start, "< No Speech >")
+                _add_sub(start, end, s["text"])
+                prev_end = end
+
+        return subs
+
 
 class OpenAIModel(AbstractWhisperModel):
-    def __init__(self):
-        super().__init__("openai_whisper-1")
+    max_single_audio_bytes = 25 * 2**20  # 25MB
+    res = []
+
+    def __init__(self, sample_rate=16000):
+        super().__init__("openai_whisper-1", sample_rate)
+
         import os
 
         if (
             os.environ.get("OPENAI_API_KEY") is None
-            or os.environ.get("OPENAI_API_KEY_PATH") is None
+            and os.environ.get("OPENAI_API_KEY_PATH") is None
         ):
             raise Exception("OPENAI_API_KEY is not set")
 
@@ -122,10 +169,91 @@ class OpenAIModel(AbstractWhisperModel):
 
     def transcribe(
         self,
-        raw_audio: AudioSegment,
+        input: srt,
         audio: np.ndarray,
-        speech_timestamps: List[SPEECH_TIMESTAMP],
+        speech_array_indices: List[SPEECH_ARRAY_INDEX],
         lang: LANG,
         prompt: str,
-    ):
-        pass
+    ) -> List[srt.Subtitle]:
+        res = []
+        name, _ = os.path.splitext(input)
+        raw_audio = AudioSegment.from_file(input)
+
+        # since TPM and	RPM, no multiprocessor
+        i = 0
+        for index in (
+            speech_array_indices
+            if len(speech_array_indices) == 1
+            else tqdm(speech_array_indices)
+        ):
+            start = int(index["start"]) / self.sample_rate * 1000
+            end = int(index["end"]) / self.sample_rate * 1000
+            audio_seg = raw_audio[start:end]
+            if len(audio_seg.raw_data) < self.max_single_audio_bytes:
+                temp_file = f"{name}_temp_{i}.wav"
+                audio_seg.export(temp_file, format="wav")
+                self._transcribe(temp_file, prompt, lang)
+                os.remove(temp_file)
+            else:
+                split_num = len(audio_seg.raw_data) // self.max_single_audio_bytes + 1
+                for j in range(split_num):
+                    temp_file = f"{name}_{i}_temp_{j}.wav"
+                    audio_seg[
+                        j
+                        * self.max_single_audio_bytes : (j + 1)
+                        * self.max_single_audio_bytes
+                    ].export(temp_file, format="wav")
+                    self._transcribe(temp_file, prompt, lang)
+                    os.remove(temp_file)
+            i += 1
+        self.res, res = res, self.res
+        return res
+
+    def _transcribe(self, file, prompt, lang):
+        def format_srt(
+            subtitles_str: str, existing_subtitles_num: int, last_subtitle: srt.Subtitle
+        ):
+            subtitles = list(srt.parse(subtitles_str))
+            for subtitle in subtitles:
+                subtitle.index += existing_subtitles_num
+                subtitle.start += last_subtitle.end
+                subtitle.end += last_subtitle.end
+
+            return subtitles
+
+        subtitles = self.whisper_model(
+            file=open(file, "rb"), prompt=prompt, language=lang, response_format="srt"
+        )
+        existing_subtitles_num = len(self.res)
+        last_subtitle = (
+            self.res[-1]
+            if len(self.res) > 0
+            else srt.Subtitle(-1, datetime.timedelta(), datetime.timedelta(), "")
+        )
+        self.res.extend(
+            [
+                subtitle
+                for subtitle in format_srt(
+                    subtitles, existing_subtitles_num, last_subtitle
+                )
+            ]
+        )
+
+    def gen_srt(self, transcribe_results: List[srt.Subtitle]):
+        if len(transcribe_results) == 0:
+            return []
+        if len(transcribe_results) == 1:
+            return transcribe_results
+        subs = [transcribe_results[0]]
+        for subtitle in transcribe_results[1:]:
+            if subtitle.start - subs[-1].end > datetime.timedelta(seconds=1):
+                subs.append(
+                    srt.Subtitle(
+                        index=0,
+                        start=subs[-1].end,
+                        end=subtitle.start,
+                        content="< No Speech >",
+                    )
+                )
+            subs.append(subtitle)
+        return subs

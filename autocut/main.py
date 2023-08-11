@@ -116,7 +116,7 @@ def main():
         "--prompt", type=str, default="", help="initial prompt feed into whisper"
     )
     parser.add_argument(
-        "--mode",
+        "--whisper-mode",
         type=str,
         default=WhisperMode.WHISPER.value,
         choices=WhisperMode.get_values(),
