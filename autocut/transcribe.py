@@ -103,7 +103,6 @@ class Transcribe:
 
     def _save_srt(self, output, transcribe_results):
         subs = self.whisper_model.gen_srt(transcribe_results)
-        print(subs)
         with open(output, "wb") as f:
             f.write(srt.compose(subs).encode(self.args.encoding, "replace"))
 

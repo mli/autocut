@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 from abc import ABC, abstractmethod
 from typing import Literal, Union, List, Any
@@ -148,6 +149,7 @@ class WhisperModel(AbstractWhisperModel):
 
 class OpenAIModel(AbstractWhisperModel):
     max_single_audio_bytes = 25 * 2**20  # 25MB
+    split_audio_bytes = 23 * 2**20  # 23MB, 2MB for safety(header, etc.)
     res = []
 
     def __init__(self, sample_rate=16000):
@@ -178,6 +180,7 @@ class OpenAIModel(AbstractWhisperModel):
         res = []
         name, _ = os.path.splitext(input)
         raw_audio = AudioSegment.from_file(input)
+        ms_bytes = len(raw_audio[:1].raw_data)
 
         # since TPM and	RPM, no multiprocessor
         i = 0
@@ -189,20 +192,28 @@ class OpenAIModel(AbstractWhisperModel):
             start = int(index["start"]) / self.sample_rate * 1000
             end = int(index["end"]) / self.sample_rate * 1000
             audio_seg = raw_audio[start:end]
-            if len(audio_seg.raw_data) < self.max_single_audio_bytes:
+            if len(audio_seg.raw_data) < self.split_audio_bytes:
                 temp_file = f"{name}_temp_{i}.wav"
                 audio_seg.export(temp_file, format="wav")
                 self._transcribe(temp_file, prompt, lang)
                 os.remove(temp_file)
             else:
-                split_num = len(audio_seg.raw_data) // self.max_single_audio_bytes + 1
+                logging.info(
+                    f"Long audio with a size({len(audio_seg.raw_data)} bytes) greater than 25M({25 * 2**20} bytes) "
+                    "will be segmented"
+                    "due to Openai's API restrictions on files smaller than 25M"
+                )
+                split_num = len(audio_seg.raw_data) // self.split_audio_bytes + 1
                 for j in range(split_num):
                     temp_file = f"{name}_{i}_temp_{j}.wav"
-                    audio_seg[
+                    split_audio = audio_seg[
                         j
-                        * self.max_single_audio_bytes : (j + 1)
-                        * self.max_single_audio_bytes
-                    ].export(temp_file, format="wav")
+                        * self.split_audio_bytes
+                        // ms_bytes : (j + 1)
+                        * self.split_audio_bytes
+                        // ms_bytes
+                    ]
+                    split_audio.export(temp_file, format="wav")
                     self._transcribe(temp_file, prompt, lang)
                     os.remove(temp_file)
             i += 1
