@@ -31,6 +31,10 @@ class AbstractWhisperModel(ABC):
         pass
 
     @abstractmethod
+    def _transcribe(self, *args, **kwargs):
+        pass
+
+    @abstractmethod
     def gen_srt(self, transcribe_results: List[Any]) -> List[srt.Subtitle]:
         pass
 
@@ -53,7 +57,7 @@ class WhisperModel(AbstractWhisperModel):
 
         self.whisper_model = whisper.load_model(model_name, device)
 
-    def _process(self, audio, seg, lang, prompt):
+    def _transcribe(self, audio, seg, lang, prompt):
         r = self.whisper_model.transcribe(
             audio[int(seg["start"]) : int(seg["end"])],
             task="transcribe",
@@ -82,7 +86,7 @@ class WhisperModel(AbstractWhisperModel):
             for seg in speech_array_indices:
                 sub_res.append(
                     pool.apply_async(
-                        self._process,
+                        self._transcribe,
                         (
                             self.whisper_model,
                             audio,
