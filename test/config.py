@@ -55,6 +55,7 @@ class TestArgs:
         vad=False,
         force=False,
         whisper_mode="whisper",
+        openai_rpm=3,
     ):
         self.inputs = []
         self.bitrate = bitrate
@@ -67,3 +68,4 @@ class TestArgs:
         self.vad = vad
         self.force = force
         self.whisper_mode = whisper_mode
+        self.openai_rpm = openai_rpm

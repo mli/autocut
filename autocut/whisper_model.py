@@ -2,7 +2,7 @@ import datetime
 import logging
 import os
 from abc import ABC, abstractmethod
-from typing import Literal, Union, List, Any
+from typing import Literal, Union, List, Any, TypedDict
 
 import numpy as np
 import opencc
@@ -150,13 +150,11 @@ class WhisperModel(AbstractWhisperModel):
 class OpenAIModel(AbstractWhisperModel):
     max_single_audio_bytes = 25 * 2**20  # 25MB
     split_audio_bytes = 23 * 2**20  # 23MB, 2MB for safety(header, etc.)
-    res = []
+    rpm = 3
 
-    def __init__(self, sample_rate=16000):
+    def __init__(self, rpm: int, sample_rate=16000):
         super().__init__("openai_whisper-1", sample_rate)
-
-        import os
-
+        self.rpm = rpm
         if (
             os.environ.get("OPENAI_API_KEY") is None
             and os.environ.get("OPENAI_API_KEY_PATH") is None
@@ -181,25 +179,25 @@ class OpenAIModel(AbstractWhisperModel):
         name, _ = os.path.splitext(input)
         raw_audio = AudioSegment.from_file(input)
         ms_bytes = len(raw_audio[:1].raw_data)
+        audios: List[
+            TypedDict(
+                "AudioInfo", {"input": str, "audio": AudioSegment, "start_ms": float}
+            )
+        ] = []
 
-        # since TPM and	RPM, no multiprocessor
         i = 0
-        for index in (
-            speech_array_indices
-            if len(speech_array_indices) == 1
-            else tqdm(speech_array_indices)
-        ):
+        for index in speech_array_indices:
             start = int(index["start"]) / self.sample_rate * 1000
             end = int(index["end"]) / self.sample_rate * 1000
             audio_seg = raw_audio[start:end]
             if len(audio_seg.raw_data) < self.split_audio_bytes:
                 temp_file = f"{name}_temp_{i}.wav"
-                audio_seg.export(temp_file, format="wav")
-                self._transcribe(temp_file, prompt, lang)
-                os.remove(temp_file)
+                audios.append(
+                    {"input": temp_file, "audio": audio_seg, "start_ms": start}
+                )
             else:
                 logging.info(
-                    f"Long audio with a size({len(audio_seg.raw_data)} bytes) greater than 25M({25 * 2**20} bytes) "
+                    f"Long audio with a size({len(audio_seg.raw_data)} bytes) greater than 25M({25 * 2 ** 20} bytes) "
                     "will be segmented"
                     "due to Openai's API restrictions on files smaller than 25M"
                 )
@@ -213,41 +211,74 @@ class OpenAIModel(AbstractWhisperModel):
                         * self.split_audio_bytes
                         // ms_bytes
                     ]
-                    split_audio.export(temp_file, format="wav")
-                    self._transcribe(temp_file, prompt, lang)
-                    os.remove(temp_file)
+                    audios.append(
+                        {
+                            "input": temp_file,
+                            "audio": split_audio,
+                            "start_ms": start + j * self.split_audio_bytes // ms_bytes,
+                        }
+                    )
             i += 1
-        self.res, res = res, self.res
+
+        if len(audios) > 1:
+            from multiprocessing import Pool
+
+            pbar = tqdm(total=len(audios))
+
+            pool = Pool(processes=min(8, self.rpm))
+            sub_res = []
+            for audio in audios:
+                sub_res.append(
+                    pool.apply_async(
+                        self._transcribe,
+                        (
+                            audio["input"],
+                            audio["audio"],
+                            prompt,
+                            lang,
+                            audio["start_ms"],
+                        ),
+                        callback=lambda x: pbar.update(),
+                    )
+                )
+            pool.close()
+            pool.join()
+            pbar.close()
+            for subs in sub_res:
+                subtitles = subs.get()
+                res.extend(subtitles)
+        else:
+            res = self._transcribe(
+                audios[0]["input"],
+                audios[0]["audio"],
+                prompt,
+                lang,
+                audios[0]["start_ms"],
+            )
+
         return res
 
-    def _transcribe(self, file, prompt, lang):
-        def format_srt(
-            subtitles_str: str, existing_subtitles_num: int, last_subtitle: srt.Subtitle
-        ):
-            subtitles = list(srt.parse(subtitles_str))
-            for subtitle in subtitles:
-                subtitle.index += existing_subtitles_num
-                subtitle.start += last_subtitle.end
-                subtitle.end += last_subtitle.end
-
-            return subtitles
-
+    def _transcribe(
+        self, input: srt, audio: AudioSegment, prompt: str, lang: LANG, start_ms: float
+    ):
+        audio.export(input, "wav")
         subtitles = self.whisper_model(
-            file=open(file, "rb"), prompt=prompt, language=lang, response_format="srt"
+            file=open(input, "rb"), prompt=prompt, language=lang, response_format="srt"
         )
-        existing_subtitles_num = len(self.res)
-        last_subtitle = (
-            self.res[-1]
-            if len(self.res) > 0
-            else srt.Subtitle(-1, datetime.timedelta(), datetime.timedelta(), "")
-        )
-        self.res.extend(
-            [
-                subtitle
-                for subtitle in format_srt(
-                    subtitles, existing_subtitles_num, last_subtitle
-                )
-            ]
+        os.remove(input)
+        return list(
+            map(
+                lambda x: (
+                    setattr(
+                        x, "start", x.start + datetime.timedelta(milliseconds=start_ms)
+                    ),
+                    setattr(
+                        x, "end", x.end + datetime.timedelta(milliseconds=start_ms)
+                    ),
+                    x,
+                )[-1],
+                list(srt.parse(subtitles)),
+            )
         )
 
     def gen_srt(self, transcribe_results: List[srt.Subtitle]):

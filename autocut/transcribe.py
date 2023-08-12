@@ -26,7 +26,7 @@ class Transcribe:
                 self.whisper_model.load(self.args.whisper_model, self.args.device)
             elif self.args.whisper_mode == WhisperMode.OPENAI.value:
                 self.whisper_model = whisper_model.OpenAIModel(
-                    sample_rate=self.sampling_rate
+                    self.args.openai_rpm, self.sampling_rate
                 )
                 self.whisper_model.load()
         logging.info(f"Done Init model in {time.time() - tic:.1f} sec")

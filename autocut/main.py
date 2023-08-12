@@ -123,6 +123,14 @@ def main():
         help="Whisper inference mode: whisper: run whisper locally; openai: use openai api.",
     )
     parser.add_argument(
+        "--openai-rpm",
+        type=int,
+        default=3,
+        choices=[3, 50],
+        help="Openai Whisper API REQUESTS PER MINUTE(FREE USERS: 3RPM; PAID USERS: 50RPM). "
+        "More info: https://platform.openai.com/docs/guides/rate-limits/overview",
+    )
+    parser.add_argument(
         "--whisper-model",
         type=str,
         default=WhisperModel.SMALL.value,
