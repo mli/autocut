@@ -4,7 +4,7 @@ AutoCut 对你的视频自动生成字幕。然后你选择需要保留的句子
 
 **2023.8.13更新**：支持调用 Openai Whisper API
 ```shell
-export export OPENAI_API_KEY=sk-xxx
+export OPENAI_API_KEY=sk-xxx
 autocut -t xxx --whisper-mode=openai --openai-rpm=3
 ```
 
