@@ -3,6 +3,7 @@ import logging
 import os
 
 from . import utils
+from .type import WhisperMode, WhisperModel
 
 
 def main():
@@ -115,10 +116,25 @@ def main():
         "--prompt", type=str, default="", help="initial prompt feed into whisper"
     )
     parser.add_argument(
+        "--whisper-mode",
+        type=str,
+        default=WhisperMode.WHISPER.value,
+        choices=WhisperMode.get_values(),
+        help="Whisper inference mode: whisper: run whisper locally; openai: use openai api.",
+    )
+    parser.add_argument(
+        "--openai-rpm",
+        type=int,
+        default=3,
+        choices=[3, 50],
+        help="Openai Whisper API REQUESTS PER MINUTE(FREE USERS: 3RPM; PAID USERS: 50RPM). "
+        "More info: https://platform.openai.com/docs/guides/rate-limits/overview",
+    )
+    parser.add_argument(
         "--whisper-model",
         type=str,
-        default="small",
-        choices=["tiny", "base", "small", "medium", "large", "large-v2"],
+        default=WhisperModel.SMALL.value,
+        choices=WhisperModel.get_values(),
         help="The whisper model used to transcribe.",
     )
     parser.add_argument(
@@ -164,7 +180,7 @@ def main():
         elif len(args.inputs) == 1:
             trans_srt_to_md(args.encoding, args.force, args.inputs[0])
         else:
-            logging.warn(
+            logging.warning(
                 "Wrong number of files, please pass in a .srt file or an additional video file"
             )
     elif args.cut:

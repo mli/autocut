@@ -1,12 +1,14 @@
 from setuptools import setup, find_packages
 
 requirements = [
-    "srt",
     "moviepy",
-    "opencc-python-reimplemented",
-    "torchaudio",
-    "parameterized",
+    "openai",
     "openai-whisper",
+    "opencc-python-reimplemented",
+    "parameterized",
+    "pydub",
+    "srt",
+    "torchaudio",
     "tqdm",
 ]
 
