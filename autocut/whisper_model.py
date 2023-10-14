@@ -166,7 +166,12 @@ class OpenAIModel(AbstractWhisperModel):
             raise Exception("OPENAI_API_KEY is not set")
 
     def load(self, model_name: Literal["whisper-1"] = "whisper-1"):
-        import openai
+        try:
+            import openai
+        except ImportError:
+            raise Exception(
+                "Please use openai mode(pip install '.[openai]') or all mode(pip install '.[all]')"
+            )
         from functools import partial
 
         self.whisper_model = partial(openai.Audio.transcribe, model=model_name)
@@ -317,10 +322,14 @@ class FasterWhisperModel(AbstractWhisperModel):
         ] = "small",
         device: Union[Literal["cpu", "cuda"], None] = None,
     ):
+        try:
+            from faster_whisper import WhisperModel
+        except ImportError:
+            raise Exception(
+                "Please use faster mode(pip install '.[faster]') or all mode(pip install '.[all]')"
+            )
+
         self.device = device if device else "cpu"
-
-        from faster_whisper import WhisperModel
-
         self.whisper_model = WhisperModel(model_name, self.device)
 
     def _transcribe(self):
