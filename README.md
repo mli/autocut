@@ -2,6 +2,33 @@
 
 AutoCut 对你的视频自动生成字幕。然后你选择需要保留的句子，AutoCut 将对你视频中对应的片段裁切并保存。你无需使用视频编辑软件，只需要编辑文本文件即可完成剪切。
 
+**2023.10.14更新**：支持 faster-whisper 和指定依赖
+
+```shell
+# for whisper only
+pip install .
+
+# for whisper and faster-whisper
+pip install '.[faster]'
+
+# for whisper and openai-whisper
+pip install '.[openai]'
+
+# for all
+pip install '.[all]'
+```
+
+```shell
+# using faster-whisper
+autocut -t xxx --whisper-mode=faster
+```
+
+```shell
+# using openai api
+export OPENAI_API_KEY=sk-xxx
+autocut -t xxx --whisper-mode=openai --openai-rpm=3
+```
+
 **2023.8.13更新**：支持调用 Openai Whisper API
 ```shell
 export OPENAI_API_KEY=sk-xxx
