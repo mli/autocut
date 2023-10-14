@@ -1,6 +1,7 @@
 from setuptools import setup, find_packages
 
 requirements = [
+    "ffmpeg",
     "moviepy",
     "openai",
     "openai-whisper",
