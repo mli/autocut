@@ -29,6 +29,11 @@ class Transcribe:
                     self.args.openai_rpm, self.sampling_rate
                 )
                 self.whisper_model.load()
+            elif self.args.whisper_mode == WhisperMode.FASTER.value:
+                self.whisper_model = whisper_model.FasterWhisperModel(
+                    self.sampling_rate
+                )
+                self.whisper_model.load(self.args.whisper_model, self.args.device)
         logging.info(f"Done Init model in {time.time() - tic:.1f} sec")
 
     def run(self):
@@ -93,6 +98,7 @@ class Transcribe:
                 audio, speech_array_indices, self.args.lang, self.args.prompt
             )
             if self.args.whisper_mode == WhisperMode.WHISPER.value
+            or self.args.whisper_mode == WhisperMode.FASTER.value
             else self.whisper_model.transcribe(
                 input, audio, speech_array_indices, self.args.lang, self.args.prompt
             )

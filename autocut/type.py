@@ -80,6 +80,7 @@ class WhisperModel(Enum):
 class WhisperMode(Enum):
     WHISPER = "whisper"
     OPENAI = "openai"
+    FASTER = "faster"
 
     @staticmethod
     def get_values():
