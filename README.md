@@ -2,7 +2,7 @@
 
 AutoCut 对你的视频自动生成字幕。然后你选择需要保留的句子，AutoCut 将对你视频中对应的片段裁切并保存。你无需使用视频编辑软件，只需要编辑文本文件即可完成剪切。
 
-**2023.10.14更新**：支持 faster-whisper 和指定依赖
+**2023.10.14更新**：支持 faster-whisper 和指定依赖（但由于 Action 限制暂时移除了 faster-whisper 的测试运行）
 
 ```shell
 # for whisper only
