@@ -166,7 +166,12 @@ class OpenAIModel(AbstractWhisperModel):
             raise Exception("OPENAI_API_KEY is not set")
 
     def load(self, model_name: Literal["whisper-1"] = "whisper-1"):
-        import openai
+        try:
+            import openai
+        except ImportError:
+            raise Exception(
+                "Please use openai mode(pip install '.[openai]') or all mode(pip install '.[all]')"
+            )
         from functools import partial
 
         self.whisper_model = partial(openai.Audio.transcribe, model=model_name)
@@ -302,4 +307,84 @@ class OpenAIModel(AbstractWhisperModel):
                     )
                 )
             subs.append(subtitle)
+        return subs
+
+
+class FasterWhisperModel(AbstractWhisperModel):
+    def __init__(self, sample_rate=16000):
+        super().__init__("faster-whisper", sample_rate)
+        self.device = None
+
+    def load(
+        self,
+        model_name: Literal[
+            "tiny", "base", "small", "medium", "large", "large-v2"
+        ] = "small",
+        device: Union[Literal["cpu", "cuda"], None] = None,
+    ):
+        try:
+            from faster_whisper import WhisperModel
+        except ImportError:
+            raise Exception(
+                "Please use faster mode(pip install '.[faster]') or all mode(pip install '.[all]')"
+            )
+
+        self.device = device if device else "cpu"
+        self.whisper_model = WhisperModel(model_name, self.device)
+
+    def _transcribe(self):
+        raise Exception("Not implemented")
+
+    def transcribe(
+        self,
+        audio: np.ndarray,
+        speech_array_indices: List[SPEECH_ARRAY_INDEX],
+        lang: LANG,
+        prompt: str,
+    ):
+        res = []
+        for seg in speech_array_indices:
+            segments, info = self.whisper_model.transcribe(
+                audio[int(seg["start"]) : int(seg["end"])],
+                task="transcribe",
+                language=lang,
+                initial_prompt=prompt,
+                vad_filter=False,
+            )
+            segments = list(segments)  # The transcription will actually run here.
+            r = {"origin_timestamp": seg, "segments": segments, "info": info}
+            res.append(r)
+        return res
+
+    def gen_srt(self, transcribe_results):
+        subs = []
+
+        def _add_sub(start, end, text):
+            subs.append(
+                srt.Subtitle(
+                    index=0,
+                    start=datetime.timedelta(seconds=start),
+                    end=datetime.timedelta(seconds=end),
+                    content=cc.convert(text.strip()),
+                )
+            )
+
+        prev_end = 0
+        for r in transcribe_results:
+            origin = r["origin_timestamp"]
+            for seg in r["segments"]:
+                s = dict(start=seg.start, end=seg.end, text=seg.text)
+                start = s["start"] + origin["start"] / self.sample_rate
+                end = min(
+                    s["end"] + origin["start"] / self.sample_rate,
+                    origin["end"] / self.sample_rate,
+                )
+                if start > end:
+                    continue
+                # mark any empty segment that is not very short
+                if start > prev_end + 1.0:
+                    _add_sub(prev_end, start, "< No Speech >")
+                _add_sub(start, end, s["text"])
+                prev_end = end
+
         return subs

@@ -43,29 +43,18 @@ TEST_MEDIA_FILE_SIMPLE = ["test001.mp4", "test005.mp3"]
 
 
 class TestArgs:
-    def __init__(
-        self,
-        encoding="utf-8",
-        sampling_rate=16000,
-        bitrate="10m",
-        lang="zh",
-        prompt="",
-        whisper_model="small",
-        device=None,
-        vad=False,
-        force=False,
-        whisper_mode="whisper",
-        openai_rpm=3,
-    ):
+    def __init__(self):
         self.inputs = []
-        self.bitrate = bitrate
-        self.encoding = encoding
-        self.sampling_rate = sampling_rate
-        self.lang = lang
-        self.prompt = prompt
-        self.whisper_model = whisper_model
-        self.device = device
-        self.vad = vad
-        self.force = force
-        self.whisper_mode = whisper_mode
-        self.openai_rpm = openai_rpm
+        self.bitrate = "10m"
+        self.encoding = "utf-8"
+        self.sampling_rate = 16000
+        self.lang = "zh"
+        self.prompt = ""
+        self.whisper_model = "small"
+        self.device = None
+        self.vad = False
+        self.force = False
+        self.whisper_mode = (
+            "faster" if os.environ.get("WHISPER_MODE") == "faster" else "whisper"
+        )
+        self.openai_rpm = 3
