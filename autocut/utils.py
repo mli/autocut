@@ -103,7 +103,7 @@ class MD:
 
     def _parse_task_status(self, line):
         # return (is_marked, rest) or (None, line) if not a task
-        m = re.match(r"- +\[([ x])\] +(.*)", line)
+        m = re.match(r"- +\[([ xX])\] +(.*)", line)
         if not m:
             return None, line
         return m.groups()[0].lower() == "x", m.groups()[1]
