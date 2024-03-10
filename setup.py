@@ -18,8 +18,8 @@ setup(
     install_requires=requirements,
     url="https://github.com/mli/autocut",
     license="Apache License 2.0",
-    long_description=open('README.md').read(),
-    long_description_content_type='text/markdown',
+    long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
     extras_require={
         "all": ["openai", "faster-whisper"],
         "openai": ["openai"],
