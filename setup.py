@@ -18,7 +18,7 @@ setup(
     install_requires=requirements,
     url="https://github.com/mli/autocut",
     project_urls={
-      "source": "https://github.com/mli/autocut",
+        "source": "https://github.com/mli/autocut",
     },
     license="Apache License 2.0",
     long_description=open("README.md").read(),
