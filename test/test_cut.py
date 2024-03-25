@@ -14,7 +14,10 @@ class TestCut(unittest.TestCase):
         logging.info("检查测试文件是否正常存在")
         scan_file = os.listdir(TEST_MEDIA_PATH)
         logging.info(
-            "应存在文件列表：" + str(TEST_MEDIA_FILE_SIMPLE) + "  扫描到文件列表：" + str(scan_file)
+            "应存在文件列表："
+            + str(TEST_MEDIA_FILE_SIMPLE)
+            + "  扫描到文件列表："
+            + str(scan_file)
         )
         for file in TEST_MEDIA_FILE_SIMPLE:
             assert file in scan_file

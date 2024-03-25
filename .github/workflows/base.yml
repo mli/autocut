@@ -33,7 +33,7 @@ jobs:
           key: ${{ runner.os }}-pip-${{ steps.set_variables.outputs.PY }}
   
       - name: Setup ffmpeg for differnt platforms 
-        uses: FedericoCarboni/setup-ffmpeg@master
+        uses: FedericoCarboni/setup-ffmpeg@v3
 
       - name: Install dependencies
         run: |
