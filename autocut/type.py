@@ -71,7 +71,8 @@ class WhisperModel(Enum):
     MEDIUM = "medium"
     LARGE = "large"
     LARGE_V2 = "large-v2"
-
+    LARGE_V3 = "large-v3"
+    
     @staticmethod
     def get_values():
         return [i.value for i in WhisperModel]
