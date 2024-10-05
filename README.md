@@ -2,6 +2,12 @@
 
 AutoCut 对你的视频自动生成字幕。然后你选择需要保留的句子，AutoCut 将对你视频中对应的片段裁切并保存。你无需使用视频编辑软件，只需要编辑文本文件即可完成剪切。
 
+**2024.10.05更新**：支持 `large-v3-turbo` [模型](https://github.com/openai/whisper/discussions/2363)，提供更快的转录速度。
+
+```shell
+autocut -t xxx --whisper-model large-v3-turbo
+````
+
 **2024.03.10更新**：支持 pip 安装和提供 import 转录相关的功能
 
 ```shell
