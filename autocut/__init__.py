@@ -1,4 +1,4 @@
-__version__ = "1.0.2"
+__version__ = "1.1.0"
 
 from .type import LANG, WhisperModel, WhisperMode
 from .utils import load_audio

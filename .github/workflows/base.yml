@@ -12,8 +12,8 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.9', '3.10']
-        #  macos did not support m1 for now
-        os: [ubuntu, windows, macos]
+        #  Wait for fix on macos-m1: https://github.com/federicocarboni/setup-ffmpeg/issues/21
+        os: [ubuntu, windows, macos-12]
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python ${{ matrix.python-version }}
@@ -32,7 +32,7 @@ jobs:
           path: ${{ steps.set_variables.outputs.PIP_CACHE }}
           key: ${{ runner.os }}-pip-${{ steps.set_variables.outputs.PY }}
   
-      - name: Setup ffmpeg for differnt platforms 
+      - name: Setup ffmpeg for different platforms
         uses: FedericoCarboni/setup-ffmpeg@v3
 
       - name: Install dependencies
