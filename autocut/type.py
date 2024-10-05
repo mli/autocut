@@ -72,6 +72,7 @@ class WhisperModel(Enum):
     LARGE = "large"
     LARGE_V2 = "large-v2"
     LARGE_V3 = "large-v3"
+    LARGE_V3_TURBO = "large-v3-turbo"
 
     @staticmethod
     def get_values():
