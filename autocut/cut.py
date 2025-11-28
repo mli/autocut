@@ -3,8 +3,15 @@ import os
 import re
 
 import srt
-from moviepy import editor
-
+from moviepy import (
+    AudioClip,
+    AudioFileClip,
+    VideoClip,
+    VideoFileClip,
+    concatenate_audioclips,
+    concatenate_videoclips,
+    afx,
+)
 from . import utils
 
 
@@ -57,12 +64,12 @@ class Merger:
                 continue
             fn = os.path.join(os.path.dirname(md_fn), m[0])
             logging.info(f"Loading {fn}")
-            videos.append(editor.VideoFileClip(fn))
+            videos.append(VideoFileClip(fn))
 
         dur = sum([v.duration for v in videos])
         logging.info(f"Merging into a video with {dur / 60:.1f} min length")
 
-        merged = editor.concatenate_videoclips(videos)
+        merged = concatenate_videoclips(videos)
         fn = os.path.splitext(md_fn)[0] + "_merged.mp4"
         merged.write_videofile(
             fn, audio_codec="aac", bitrate=self.args.bitrate
@@ -126,9 +133,9 @@ class Cutter:
                     )
 
         if is_video_file:
-            media = editor.VideoFileClip(fns["media"])
+            media = VideoFileClip(fns["media"])
         else:
-            media = editor.AudioFileClip(fns["media"])
+            media = AudioFileClip(fns["media"])
 
         # Add a fade between two clips. Not quite necessary. keep code here for reference
         # fade = 0
@@ -137,28 +144,28 @@ class Cutter:
         #         s['start'], s['end']).crossfadein(fade) for s in segments]
         # final_clip = editor.concatenate_videoclips(clips, padding = -fade)
 
-        clips = [media.subclip(s["start"], s["end"]) for s in segments]
+        clips = [media.subclipped(s["start"], s["end"]) for s in segments]
         if is_video_file:
-            final_clip: editor.VideoClip = editor.concatenate_videoclips(clips)
+            final_clip: VideoClip = concatenate_videoclips(clips)
             logging.info(
                 f"Reduced duration from {media.duration:.1f} to {final_clip.duration:.1f}"
             )
 
-            aud = final_clip.audio.set_fps(44100)
-            final_clip = final_clip.without_audio().set_audio(aud)
-            final_clip = final_clip.fx(editor.afx.audio_normalize)
+            aud = final_clip.audio.with_fps(44100)
+            final_clip = final_clip.without_audio().with_audio(aud)
+            final_clip = final_clip.with_effects([afx.AudioNormalize()])
 
             # an alternative to birate is use crf, e.g. ffmpeg_params=['-crf', '18']
             final_clip.write_videofile(
                 output_fn, audio_codec="aac", bitrate=self.args.bitrate
             )
         else:
-            final_clip: editor.AudioClip = editor.concatenate_audioclips(clips)
+            final_clip: AudioClip = concatenate_audioclips(clips)
             logging.info(
                 f"Reduced duration from {media.duration:.1f} to {final_clip.duration:.1f}"
             )
 
-            final_clip = final_clip.fx(editor.afx.audio_normalize)
+            final_clip = final_clip.with_effects([afx.AudioNormalize()])
             final_clip.write_audiofile(
                 output_fn, codec="libmp3lame", fps=44100, bitrate=self.args.bitrate
             )
