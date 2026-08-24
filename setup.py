@@ -27,6 +27,7 @@ setup(
         "all": ["openai", "faster-whisper"],
         "openai": ["openai"],
         "faster": ["faster-whisper"],
+        "mlx": ["mlx-whisper"],
     },
     packages=find_packages(),
     entry_points={

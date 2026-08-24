@@ -1,13 +1,16 @@
+from __future__ import annotations
+
 import datetime
 import logging
 import os
+import tempfile
+import wave
 from abc import ABC, abstractmethod
 from typing import Literal, Union, List, Any, TypedDict
 
 import numpy as np
 import opencc
 import srt
-from pydub import AudioSegment
 from tqdm import tqdm
 
 from .type import SPEECH_ARRAY_INDEX, LANG
@@ -151,6 +154,117 @@ class WhisperModel(AbstractWhisperModel):
         return subs
 
 
+class MLXWhisperModel(AbstractWhisperModel):
+    """Whisper backend optimized for Apple Silicon through MLX."""
+
+    model_repositories = {
+        "tiny": "mlx-community/whisper-tiny",
+        "base": "mlx-community/whisper-base-mlx",
+        "small": "mlx-community/whisper-small-mlx",
+        "medium": "mlx-community/whisper-medium-mlx",
+        "large": "mlx-community/whisper-large-v3-mlx",
+        "large-v2": "mlx-community/whisper-large-v2-mlx",
+        "large-v3": "mlx-community/whisper-large-v3-mlx",
+        "large-v3-turbo": "mlx-community/whisper-large-v3-turbo",
+    }
+
+    def __init__(self, sample_rate=16000):
+        super().__init__("mlx-whisper", sample_rate)
+        self.model_repository = None
+
+    def load(
+        self,
+        model_name: str = "small",
+        device: Union[Literal["cpu", "cuda"], None] = None,
+    ):
+        try:
+            import mlx_whisper
+        except ImportError as e:
+            raise Exception(
+                "Please install MLX support with: pip install '.[mlx]'"
+            ) from e
+
+        if model_name not in self.model_repositories:
+            supported = ", ".join(sorted(self.model_repositories))
+            raise ValueError(
+                f"Unsupported MLX Whisper model {model_name!r}. "
+                f"Supported models: {supported}"
+            )
+
+        self.whisper_model = mlx_whisper
+        self.model_repository = self.model_repositories[model_name]
+        # MLX selects the Apple Silicon device itself. Keep the argument for
+        # interface compatibility with the other backends.
+        self.device = device
+
+    def transcribe_file(self, input: str, lang: LANG, prompt: str = ""):
+        if self.whisper_model is None or self.model_repository is None:
+            raise RuntimeError("MLX Whisper model has not been loaded")
+
+        return self.whisper_model.transcribe(
+            input,
+            path_or_hf_repo=self.model_repository,
+            language=lang,
+            initial_prompt=prompt or None,
+            verbose=False,
+        )
+
+    def transcribe(
+        self,
+        audio: np.ndarray,
+        speech_array_indices: List[SPEECH_ARRAY_INDEX],
+        lang: LANG,
+        prompt: str,
+    ):
+        """Transcribe an in-memory mono float32 waveform through MLX."""
+        temp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+                temp_path = f.name
+
+            pcm = np.clip(audio, -1.0, 1.0)
+            pcm = (pcm * 32767).astype("<i2")
+            with wave.open(temp_path, "wb") as wav_file:
+                wav_file.setnchannels(1)
+                wav_file.setsampwidth(2)
+                wav_file.setframerate(self.sample_rate)
+                wav_file.writeframes(pcm.tobytes())
+
+            return self.transcribe_file(temp_path, lang, prompt)
+        finally:
+            if temp_path and os.path.exists(temp_path):
+                os.remove(temp_path)
+
+    def _transcribe(self, *args, **kwargs):
+        return self.transcribe(*args, **kwargs)
+
+    def gen_srt(self, transcribe_results):
+        subs = []
+        prev_end = 0.0
+
+        def _add_sub(start, end, text):
+            subs.append(
+                srt.Subtitle(
+                    index=0,
+                    start=datetime.timedelta(seconds=start),
+                    end=datetime.timedelta(seconds=end),
+                    content=cc.convert(text.strip()),
+                )
+            )
+
+        for segment in transcribe_results.get("segments", []):
+            start = float(segment["start"])
+            end = float(segment["end"])
+            if start > end:
+                continue
+            if start > prev_end + 1.0:
+                _add_sub(prev_end, start, "< No Speech >")
+            _add_sub(start, end, segment.get("text", ""))
+            prev_end = end
+
+        return subs
+
+
 class OpenAIModel(AbstractWhisperModel):
     max_single_audio_bytes = 25 * 2**20  # 25MB
     split_audio_bytes = 23 * 2**20  # 23MB, 2MB for safety(header, etc.)
@@ -184,6 +298,8 @@ class OpenAIModel(AbstractWhisperModel):
         lang: LANG,
         prompt: str,
     ) -> List[srt.Subtitle]:
+        from pydub import AudioSegment
+
         res = []
         name, _ = os.path.splitext(input)
         raw_audio = AudioSegment.from_file(input)

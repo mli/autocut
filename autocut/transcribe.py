@@ -5,7 +5,6 @@ from typing import List, Any
 
 import numpy as np
 import srt
-import torch
 
 from . import utils, whisper_model
 from .type import WhisperMode, SPEECH_ARRAY_INDEX
@@ -34,6 +33,9 @@ class Transcribe:
                     self.sampling_rate
                 )
                 self.whisper_model.load(self.args.whisper_model, self.args.device)
+            elif self.args.whisper_mode == WhisperMode.MLX.value:
+                self.whisper_model = whisper_model.MLXWhisperModel(self.sampling_rate)
+                self.whisper_model.load(self.args.whisper_model, self.args.device)
         logging.info(f"Done Init model in {time.time() - tic:.1f} sec")
 
     def run(self):
@@ -43,9 +45,17 @@ class Transcribe:
             if utils.check_exists(name + ".md", self.args.force):
                 continue
 
-            audio = utils.load_audio(input, sr=self.sampling_rate)
-            speech_array_indices = self._detect_voice_activity(audio)
-            transcribe_results = self._transcribe(input, audio, speech_array_indices)
+            if self.args.whisper_mode == WhisperMode.MLX.value:
+                # MLX Whisper accepts the media path directly and produces
+                # timestamped segments, so it does not need the PyTorch/Silero
+                # VAD path used by the other local backends.
+                transcribe_results = self._transcribe_mlx(input)
+            else:
+                audio = utils.load_audio(input, sr=self.sampling_rate)
+                speech_array_indices = self._detect_voice_activity(audio)
+                transcribe_results = self._transcribe(
+                    input, audio, speech_array_indices
+                )
 
             output = name + ".srt"
             self._save_srt(output, transcribe_results)
@@ -60,6 +70,8 @@ class Transcribe:
 
         tic = time.time()
         if self.vad_model is None or self.detect_speech is None:
+            import torch
+
             # torch load limit https://github.com/pytorch/vision/issues/4156
             torch.hub._validate_not_a_forked_repo = lambda a, b, c: True
             self.vad_model, funcs = torch.hub.load(
@@ -104,6 +116,14 @@ class Transcribe:
             )
         )
 
+        logging.info(f"Done transcription in {time.time() - tic:.1f} sec")
+        return res
+
+    def _transcribe_mlx(self, input: str) -> List[Any]:
+        tic = time.time()
+        res = self.whisper_model.transcribe_file(
+            input, self.args.lang, self.args.prompt
+        )
         logging.info(f"Done transcription in {time.time() - tic:.1f} sec")
         return res
 

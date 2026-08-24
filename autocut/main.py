@@ -120,7 +120,7 @@ def main():
         type=str,
         default=WhisperMode.WHISPER.value,
         choices=WhisperMode.get_values(),
-        help="Whisper inference mode: whisper: run whisper locally; openai: use openai api.",
+        help="Whisper inference mode: whisper/faster: run locally; mlx: use Apple Silicon; openai: use OpenAI API.",
     )
     parser.add_argument(
         "--openai-rpm",
