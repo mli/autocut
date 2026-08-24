@@ -34,12 +34,27 @@ pip install '.[openai]'
 
 # for all
 pip install '.[all]'
+
+# for Apple Silicon (M1/M2/M3/M4/M5)
+pip install '.[mlx]'
 ```
 
 ```shell
 # using faster-whisper
 autocut -t xxx --whisper-mode=faster
 ```
+
+```shell
+# using MLX Whisper on Apple Silicon
+autocut -t xxx --whisper-mode=mlx --whisper-model large-v3-turbo
+```
+
+The `mlx` mode uses `mlx-whisper` to run transcription through Apple's MLX
+framework. It accepts the media file directly, skips the PyTorch/Silero VAD
+path, and keeps the existing SRT/Markdown/cutting workflow. The model is
+downloaded from the MLX Community on first use. `large-v3-turbo` is a good
+default for Apple Silicon; use `large-v3` when prioritizing accuracy over
+speed.
 
 ```shell
 # using openai api
