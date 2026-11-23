@@ -7,6 +7,7 @@ picture squashed.  ffmpeg applies the matrix by default, so the helpers here
 use ffprobe/ffmpeg directly and stay free of heavy imports so they can be used
 before the media stack is importable.
 """
+
 import json
 import logging
 import os
@@ -36,8 +37,13 @@ def _stream_rotation(stream):
 def display_rotation(filename):
     """Return the container display rotation in degrees, 0 when it has none."""
     cmd = [
-        _binary("ffprobe"), "-v", "error", "-print_format", "json",
-        "-show_streams", filename,
+        _binary("ffprobe"),
+        "-v",
+        "error",
+        "-print_format",
+        "json",
+        "-show_streams",
+        filename,
     ]
     try:
         out = subprocess.run(cmd, check=True, capture_output=True).stdout
@@ -64,9 +70,23 @@ def normalize(filename, suffix="_rotated"):
     base, _ = os.path.splitext(filename)
     out = base + suffix + ".mp4"
     cmd = [
-        _binary("ffmpeg"), "-y", "-loglevel", "error", "-i", filename,
-        "-c:v", "libx264", "-crf", "18", "-preset", "veryfast",
-        "-c:a", "aac", "-b:a", "192k", out,
+        _binary("ffmpeg"),
+        "-y",
+        "-loglevel",
+        "error",
+        "-i",
+        filename,
+        "-c:v",
+        "libx264",
+        "-crf",
+        "18",
+        "-preset",
+        "veryfast",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "192k",
+        out,
     ]
     subprocess.run(cmd, check=True)
     return out
