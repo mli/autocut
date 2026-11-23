@@ -2,6 +2,17 @@
 
 AutoCut 对你的视频自动生成字幕。然后你选择需要保留的句子，AutoCut 将对你视频中对应的片段裁切并保存。你无需使用视频编辑软件，只需要编辑文本文件即可完成剪切。
 
+**最新更新**：新增 MLX Whisper 后端，支持在 Apple Silicon Mac 上通过 `--whisper-mode mlx` 本地转录。
+
+```shell
+pip install '.[mlx]'
+autocut -t video.mp4 --whisper-mode mlx --whisper-model large-v2
+```
+
+MLX 可以直接读取媒体文件，跳过 PyTorch/Silero VAD，照常生成 SRT 和 Markdown 供后续剪切。推荐使用 `large-v2`，模型会在首次使用时从 MLX Community 下载。
+
+`[all]` 仅包含 OpenAI API 和 faster-whisper 的额外依赖。Apple Silicon 用户可以用 `pip install '.[all,mlx]'` 安装所有后端。使用 MLX 模式时请省略 `--device`，让 MLX 自动选择设备。需要强制使用 CPU 时，可以用 `--whisper-mode whisper --device cpu`。
+
 **2024.10.05更新**：支持 `large-v3-turbo` [模型](https://github.com/openai/whisper/discussions/2363)，提供更快的转录速度。
 
 ```shell
@@ -32,7 +43,7 @@ pip install '.[faster]'
 # for whisper and openai-whisper
 pip install '.[openai]'
 
-# for all
+# for Whisper, OpenAI API, and faster-whisper
 pip install '.[all]'
 ```
 

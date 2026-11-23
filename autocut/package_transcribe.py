@@ -3,7 +3,6 @@ import time
 from typing import List, Any, Union, Literal
 
 import numpy as np
-import torch
 
 from . import utils, whisper_model
 from .type import WhisperMode, SPEECH_ARRAY_INDEX, WhisperModel, LANG
@@ -13,7 +12,9 @@ class Transcribe:
     def __init__(
         self,
         whisper_mode: Union[
-            WhisperMode.WHISPER.value, WhisperMode.FASTER.value
+            WhisperMode.WHISPER.value,
+            WhisperMode.FASTER.value,
+            WhisperMode.MLX.value,
         ] = WhisperMode.WHISPER.value,
         whisper_model_size: WhisperModel.get_values() = "small",
         vad: bool = True,
@@ -38,9 +39,17 @@ class Transcribe:
                     self.sampling_rate
                 )
                 self.whisper_model.load(self.whisper_model_size, self.device)
+            elif self.whisper_mode == WhisperMode.MLX.value:
+                self.whisper_model = whisper_model.MLXWhisperModel(self.sampling_rate)
+                self.whisper_model.load(self.whisper_model_size, self.device)
         logging.info(f"Done Init model in {time.time() - tic:.1f} sec")
 
     def run(self, audio: np.ndarray, lang: LANG, prompt: str = ""):
+        if self.whisper_mode == WhisperMode.MLX.value:
+            # MLX Whisper performs file-based transcription and does not need
+            # the PyTorch/Silero VAD path.
+            return self._transcribe(audio, [], lang, prompt)
+
         speech_array_indices = self._detect_voice_activity(audio)
         transcribe_results = self._transcribe(audio, speech_array_indices, lang, prompt)
         return transcribe_results
@@ -55,6 +64,8 @@ class Transcribe:
 
         tic = time.time()
         if self.vad_model is None or self.detect_speech is None:
+            import torch
+
             # torch load limit https://github.com/pytorch/vision/issues/4156
             torch.hub._validate_not_a_forked_repo = lambda a, b, c: True
             self.vad_model, funcs = torch.hub.load(
