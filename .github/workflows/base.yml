@@ -8,37 +8,43 @@ on:
 
 jobs:
   lint_and_test:
-    runs-on: ${{ matrix.os }}-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         python-version: ['3.9', '3.10']
-        #  Wait for fix on macos-m1: https://github.com/federicocarboni/setup-ffmpeg/issues/21
-        os: [ubuntu, windows, macos-12]
+        # Ubuntu 26.04 does not provide a Python 3.9 build.
+        os: [ubuntu-24.04, windows-2022, macos-15]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Set Variables
-        id: set_variables
-        shell: bash
-        run: |
-          echo "PY=$(python -c 'import hashlib, sys;print(hashlib.sha256(sys.version.encode()+sys.executable.encode()).hexdigest())')" >> $GITHUB_OUTPUT
-          echo "PIP_CACHE=$(pip cache dir)" >> $GITHUB_OUTPUT
-      - name: Cache PIP
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.set_variables.outputs.PIP_CACHE }}
-          key: ${{ runner.os }}-pip-${{ steps.set_variables.outputs.PY }}
-  
-      - name: Setup ffmpeg for different platforms
-        uses: FedericoCarboni/setup-ffmpeg@v3
+          cache: pip
+          cache-dependency-path: setup.py
 
+      - name: Install FFmpeg on Linux
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      - name: Install FFmpeg on Windows
+        if: runner.os == 'Windows'
+        run: choco install ffmpeg --no-progress -y
+      - name: Install FFmpeg on macOS
+        if: runner.os == 'macOS'
+        run: brew install ffmpeg
+      - name: Check FFmpeg tools
+        run: |
+          ffmpeg -version
+          ffprobe -version
+
+      - name: Install CPU PyTorch on Linux
+        if: runner.os == 'Linux'
+        run: python -m pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install .
-          pip install pytest
+          # AutoCut imports moviepy.editor, which was removed in MoviePy 2.
+          python -m pip install . "moviepy<2" pytest
       - name: Run Test
-        run: pytest test/
+        run: python -m pytest test/
