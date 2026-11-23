@@ -32,11 +32,14 @@ pip install '.[faster]'
 # for whisper and openai-whisper
 pip install '.[openai]'
 
-# for all
+# for Whisper, OpenAI API, and faster-whisper
 pip install '.[all]'
 
 # for Apple Silicon (M1/M2/M3/M4/M5)
 pip install '.[mlx]'
+
+# for all backends on Apple Silicon
+pip install '.[all,mlx]'
 ```
 
 ```shell
@@ -55,6 +58,10 @@ path, and keeps the existing SRT/Markdown/cutting workflow. The model is
 downloaded from the MLX Community on first use. `large-v3-turbo` is a good
 default for Apple Silicon; use `large-v3` when prioritizing accuracy over
 speed.
+
+MLX requires the `[mlx]` extra, which is separate from `[all]`. Omit
+`--device` in MLX mode so MLX can select its default device. To force CPU
+transcription, use `--whisper-mode whisper --device cpu`.
 
 ```shell
 # using openai api

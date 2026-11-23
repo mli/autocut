@@ -125,7 +125,7 @@ class Transcribe:
             input, self.args.lang, self.args.prompt
         )
         logging.info(f"Done transcription in {time.time() - tic:.1f} sec")
-        return res
+        return [res]
 
     def _save_srt(self, output, transcribe_results):
         subs = self.whisper_model.gen_srt(transcribe_results)

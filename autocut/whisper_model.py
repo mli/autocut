@@ -177,6 +177,18 @@ class MLXWhisperModel(AbstractWhisperModel):
         model_name: str = "small",
         device: Union[Literal["cpu", "cuda"], None] = None,
     ):
+        if device is not None:
+            message = (
+                f"MLX Whisper does not support an explicit device ({device!r}). "
+                "Omit --device (or use device=None in Python) to let MLX select it."
+            )
+            if device == "cpu":
+                message += (
+                    " To force CPU, use --whisper-mode whisper --device cpu "
+                    "or select Whisper mode with device='cpu' in Python."
+                )
+            raise ValueError(message)
+
         try:
             import mlx_whisper
         except ImportError as e:
@@ -193,9 +205,6 @@ class MLXWhisperModel(AbstractWhisperModel):
 
         self.whisper_model = mlx_whisper
         self.model_repository = self.model_repositories[model_name]
-        # MLX selects the Apple Silicon device itself. Keep the argument for
-        # interface compatibility with the other backends.
-        self.device = device
 
     def transcribe_file(self, input: str, lang: LANG, prompt: str = ""):
         if self.whisper_model is None or self.model_repository is None:
@@ -230,7 +239,8 @@ class MLXWhisperModel(AbstractWhisperModel):
                 wav_file.setframerate(self.sample_rate)
                 wav_file.writeframes(pcm.tobytes())
 
-            return self.transcribe_file(temp_path, lang, prompt)
+            result = self.transcribe_file(temp_path, lang, prompt)
+            return [{**result, "origin_timestamp": {"start": 0, "end": len(audio)}}]
         finally:
             if temp_path and os.path.exists(temp_path):
                 os.remove(temp_path)
@@ -252,15 +262,16 @@ class MLXWhisperModel(AbstractWhisperModel):
                 )
             )
 
-        for segment in transcribe_results.get("segments", []):
-            start = float(segment["start"])
-            end = float(segment["end"])
-            if start > end:
-                continue
-            if start > prev_end + 1.0:
-                _add_sub(prev_end, start, "< No Speech >")
-            _add_sub(start, end, segment.get("text", ""))
-            prev_end = end
+        for result in transcribe_results:
+            for segment in result.get("segments", []):
+                start = float(segment["start"])
+                end = float(segment["end"])
+                if start > end:
+                    continue
+                if start > prev_end + 1.0:
+                    _add_sub(prev_end, start, "< No Speech >")
+                _add_sub(start, end, segment.get("text", ""))
+                prev_end = end
 
         return subs
 
