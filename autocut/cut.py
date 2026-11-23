@@ -1,11 +1,13 @@
 import logging
 import os
 import re
+from contextlib import ExitStack
+from tempfile import TemporaryDirectory
 
 import srt
 from moviepy import editor
 
-from . import utils
+from . import rotation, utils
 
 
 # Merge videos
@@ -125,43 +127,58 @@ class Cutter:
                         {"start": x.start.total_seconds(), "end": x.end.total_seconds()}
                     )
 
-        if is_video_file:
-            media = editor.VideoFileClip(fns["media"])
-        else:
-            media = editor.AudioFileClip(fns["media"])
+        with ExitStack() as stack:
+            media_path = fns["media"]
+            if is_video_file and rotation.needs_rotation(media_path):
+                temp_dir = stack.enter_context(TemporaryDirectory(prefix="autocut-"))
+                rotated_path = os.path.join(temp_dir, "rotated.mp4")
+                rotation.normalize(media_path, rotated_path)
+                logging.info(
+                    f"Applied display rotation of {media_path} to {rotated_path}"
+                )
+                media_path = rotated_path
 
-        # Add a fade between two clips. Not quite necessary. keep code here for reference
-        # fade = 0
-        # segments = _expand_segments(segments, fade, 0, video.duration)
-        # clips = [video.subclip(
-        #         s['start'], s['end']).crossfadein(fade) for s in segments]
-        # final_clip = editor.concatenate_videoclips(clips, padding = -fade)
-
-        clips = [media.subclip(s["start"], s["end"]) for s in segments]
-        if is_video_file:
-            final_clip: editor.VideoClip = editor.concatenate_videoclips(clips)
-            logging.info(
-                f"Reduced duration from {media.duration:.1f} to {final_clip.duration:.1f}"
+            media = (
+                editor.VideoFileClip(media_path, audio=False)
+                if is_video_file
+                else editor.AudioFileClip(media_path)
             )
+            stack.callback(media.close)
+            # Opening the audio reader can fail after the video reader is open.
+            if is_video_file and media.reader.infos["audio_found"]:
+                media.audio = editor.AudioFileClip(media_path)
 
-            aud = final_clip.audio.set_fps(44100)
-            final_clip = final_clip.without_audio().set_audio(aud)
-            final_clip = final_clip.fx(editor.afx.audio_normalize)
+            # Add a fade between two clips. Not quite necessary. keep code here for reference
+            # fade = 0
+            # segments = _expand_segments(segments, fade, 0, video.duration)
+            # clips = [video.subclip(
+            #         s['start'], s['end']).crossfadein(fade) for s in segments]
+            # final_clip = editor.concatenate_videoclips(clips, padding = -fade)
 
-            # an alternative to birate is use crf, e.g. ffmpeg_params=['-crf', '18']
-            final_clip.write_videofile(
-                output_fn, audio_codec="aac", bitrate=self.args.bitrate
-            )
-        else:
-            final_clip: editor.AudioClip = editor.concatenate_audioclips(clips)
-            logging.info(
-                f"Reduced duration from {media.duration:.1f} to {final_clip.duration:.1f}"
-            )
+            clips = [media.subclip(s["start"], s["end"]) for s in segments]
+            if is_video_file:
+                final_clip: editor.VideoClip = editor.concatenate_videoclips(clips)
+                logging.info(
+                    f"Reduced duration from {media.duration:.1f} to {final_clip.duration:.1f}"
+                )
 
-            final_clip = final_clip.fx(editor.afx.audio_normalize)
-            final_clip.write_audiofile(
-                output_fn, codec="libmp3lame", fps=44100, bitrate=self.args.bitrate
-            )
+                aud = final_clip.audio.set_fps(44100)
+                final_clip = final_clip.without_audio().set_audio(aud)
+                final_clip = final_clip.fx(editor.afx.audio_normalize)
 
-        media.close()
+                # an alternative to birate is use crf, e.g. ffmpeg_params=['-crf', '18']
+                final_clip.write_videofile(
+                    output_fn, audio_codec="aac", bitrate=self.args.bitrate
+                )
+            else:
+                final_clip: editor.AudioClip = editor.concatenate_audioclips(clips)
+                logging.info(
+                    f"Reduced duration from {media.duration:.1f} to {final_clip.duration:.1f}"
+                )
+
+                final_clip = final_clip.fx(editor.afx.audio_normalize)
+                final_clip.write_audiofile(
+                    output_fn, codec="libmp3lame", fps=44100, bitrate=self.args.bitrate
+                )
+
         logging.info(f"Saved media to {output_fn}")
