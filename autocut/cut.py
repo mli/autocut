@@ -138,9 +138,15 @@ class Cutter:
                 )
                 media_path = rotated_path
 
-            open_clip = editor.VideoFileClip if is_video_file else editor.AudioFileClip
-            media = open_clip(media_path)
+            media = (
+                editor.VideoFileClip(media_path, audio=False)
+                if is_video_file
+                else editor.AudioFileClip(media_path)
+            )
             stack.callback(media.close)
+            # Opening the audio reader can fail after the video reader is open.
+            if is_video_file and media.reader.infos["audio_found"]:
+                media.audio = editor.AudioFileClip(media_path)
 
             # Add a fade between two clips. Not quite necessary. keep code here for reference
             # fade = 0

@@ -5,6 +5,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+from moviepy.audio.io import AudioFileClip as moviepy_audio
+from moviepy.video.io import VideoFileClip as moviepy_video
 
 from autocut import rotation
 from autocut.cut import Cutter, editor
@@ -119,7 +121,7 @@ def test_portrait_cut_preserves_existing_video(portrait_cutter, tmp_path):
 def test_portrait_cut_cleans_temp_dir_on_open_failure(portrait_cutter, tmp_path):
     opened_paths = []
 
-    def fail_open(filename):
+    def fail_open(filename, **kwargs):
         path = Path(filename)
         assert path.is_file()
         opened_paths.append(path)
@@ -135,12 +137,44 @@ def test_portrait_cut_cleans_temp_dir_on_open_failure(portrait_cutter, tmp_path)
 
 
 @needs_ffmpeg
+def test_portrait_cut_cleans_up_when_opening_audio_fails(portrait_cutter, request):
+    video_readers = []
+    open_video_reader = moviepy_video.FFMPEG_VideoReader
+
+    def track_video_reader(*args, **kwargs):
+        reader = open_video_reader(*args, **kwargs)
+        request.addfinalizer(reader.close)
+        video_readers.append(reader)
+        return reader
+
+    def fail_audio_open(filename, **kwargs):
+        (reader,) = video_readers
+        assert reader.proc is not None
+        assert filename == reader.filename
+        assert Path(filename).is_file()
+        raise OSError("cannot open audio reader")
+
+    with patch.object(
+        moviepy_video, "FFMPEG_VideoReader", side_effect=track_video_reader
+    ):
+        with patch.object(
+            moviepy_audio, "FFMPEG_AudioReader", side_effect=fail_audio_open
+        ):
+            with pytest.raises(OSError, match="cannot open audio reader"):
+                portrait_cutter.run()
+
+    (reader,) = video_readers
+    assert reader.proc is None
+    assert not Path(reader.filename).parent.exists()
+
+
+@needs_ffmpeg
 def test_portrait_cut_closes_reader_and_removes_temp_on_write_failure(portrait_cutter):
     opened_clips = []
     open_clip = editor.VideoFileClip
 
-    def track_open(filename):
-        clip = open_clip(filename)
+    def track_open(filename, **kwargs):
+        clip = open_clip(filename, **kwargs)
         opened_clips.append(clip)
         return clip
 
