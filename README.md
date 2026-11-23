@@ -6,10 +6,10 @@ AutoCut 对你的视频自动生成字幕。然后你选择需要保留的句子
 
 ```shell
 pip install '.[mlx]'
-autocut -t video.mp4 --whisper-mode mlx --whisper-model large-v3-turbo
+autocut -t video.mp4 --whisper-mode mlx --whisper-model large-v2
 ```
 
-MLX 可以直接读取媒体文件，跳过 PyTorch/Silero VAD，照常生成 SRT 和 Markdown 供后续剪切。模型会在首次使用时从 MLX Community 下载。推荐从 `large-v3-turbo` 开始，更看重准确率时可以选 `large-v3`。
+MLX 可以直接读取媒体文件，跳过 PyTorch/Silero VAD，照常生成 SRT 和 Markdown 供后续剪切。推荐使用 `large-v2`，模型会在首次使用时从 MLX Community 下载。
 
 `[all]` 仅包含 OpenAI API 和 faster-whisper 的额外依赖。Apple Silicon 用户可以用 `pip install '.[all,mlx]'` 安装所有后端。使用 MLX 模式时请省略 `--device`，让 MLX 自动选择设备。需要强制使用 CPU 时，可以用 `--whisper-mode whisper --device cpu`。
 
