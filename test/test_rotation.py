@@ -13,10 +13,19 @@ PLAIN_MEDIA = os.path.join(TEST_MEDIA_PATH, "test001.mp4")
 def _probe_size(path):
     out = subprocess.run(
         [
-            "ffprobe", "-v", "error", "-select_streams", "v:0",
-            "-show_entries", "stream=width,height", "-of", "json", path,
+            "ffprobe",
+            "-v",
+            "error",
+            "-select_streams",
+            "v:0",
+            "-show_entries",
+            "stream=width,height",
+            "-of",
+            "json",
+            path,
         ],
-        check=True, capture_output=True,
+        check=True,
+        capture_output=True,
     ).stdout
     stream = json.loads(out)["streams"][0]
     return stream["width"], stream["height"]
@@ -25,10 +34,20 @@ def _probe_size(path):
 def _rotate_metadata(src, dst, degrees="-90"):
     subprocess.run(
         [
-            "ffmpeg", "-y", "-loglevel", "error",
-            "-display_rotation", degrees, "-i", src, "-c", "copy", dst,
+            "ffmpeg",
+            "-y",
+            "-loglevel",
+            "error",
+            "-display_rotation",
+            degrees,
+            "-i",
+            src,
+            "-c",
+            "copy",
+            dst,
         ],
-        check=True, capture_output=True,
+        check=True,
+        capture_output=True,
     )
 
 
