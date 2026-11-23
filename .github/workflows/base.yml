@@ -10,6 +10,7 @@ jobs:
   lint_and_test:
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         python-version: ['3.9', '3.10']
         # Ubuntu 26.04 does not provide a Python 3.9 build.
@@ -30,7 +31,19 @@ jobs:
           sudo apt-get install -y ffmpeg
       - name: Install FFmpeg on Windows
         if: runner.os == 'Windows'
-        run: choco install ffmpeg --no-progress -y
+        shell: pwsh
+        run: |
+          $version = '8.0.1'
+          $build = "ffmpeg-$version-essentials_build"
+          $archive = Join-Path $env:RUNNER_TEMP "$build.zip"
+          Invoke-WebRequest -Uri "https://github.com/GyanD/codexffmpeg/releases/download/$version/$build.zip" `
+            -OutFile $archive -MaximumRetryCount 3 -RetryIntervalSec 5
+          $expectedHash = 'e2aaeaa0fdbc397d4794828086424d4aaa2102cef1fb6874f6ffd29c0b88b673'
+          if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash -ne $expectedHash) {
+            throw 'FFmpeg archive SHA-256 mismatch'
+          }
+          Expand-Archive -LiteralPath $archive -DestinationPath $env:RUNNER_TEMP
+          Join-Path $env:RUNNER_TEMP "$build/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
       - name: Install FFmpeg on macOS
         if: runner.os == 'macOS'
         run: brew install ffmpeg
