@@ -5,7 +5,7 @@ import re
 import srt
 from moviepy import editor
 
-from . import utils
+from . import rotation, utils
 
 
 # Merge videos
@@ -125,8 +125,16 @@ class Cutter:
                         {"start": x.start.total_seconds(), "end": x.end.total_seconds()}
                     )
 
+        rotated_fn = None
         if is_video_file:
-            media = editor.VideoFileClip(fns["media"])
+            if rotation.needs_rotation(fns["media"]):
+                rotated_fn = rotation.normalize(fns["media"])
+                logging.info(
+                    f"Applied display rotation of {fns['media']} to {rotated_fn}"
+                )
+                media = editor.VideoFileClip(rotated_fn)
+            else:
+                media = editor.VideoFileClip(fns["media"])
         else:
             media = editor.AudioFileClip(fns["media"])
 
@@ -164,4 +172,6 @@ class Cutter:
             )
 
         media.close()
+        if rotated_fn is not None and os.path.exists(rotated_fn):
+            os.remove(rotated_fn)
         logging.info(f"Saved media to {output_fn}")
