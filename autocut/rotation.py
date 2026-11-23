@@ -1,12 +1,4 @@
-"""Display-rotation helpers for containers that carry a display matrix.
-
-iPhone (and many Android) cameras store landscape pixels plus a rotation
-matrix.  moviepy 1.x parses that matrix into ``clip.rotation`` but never
-applies it, so a portrait recording is cut back as a landscape video with the
-picture squashed.  ffmpeg applies the matrix by default, so the helpers here
-use ffprobe/ffmpeg directly and stay free of heavy imports so they can be used
-before the media stack is importable.
-"""
+"""Read and apply video display rotation (iPhone portrait clips)."""
 
 import json
 import logging
@@ -18,7 +10,7 @@ import subprocess
 def _binary(name):
     path = shutil.which(name)
     if path is None:
-        raise RuntimeError(f"cannot find {name} on PATH; install ffmpeg first")
+        raise RuntimeError(f"{name} not found on PATH")
     return path
 
 
@@ -35,7 +27,6 @@ def _stream_rotation(stream):
 
 
 def display_rotation(filename):
-    """Return the container display rotation in degrees, 0 when it has none."""
     cmd = [
         _binary("ffprobe"),
         "-v",
@@ -57,16 +48,10 @@ def display_rotation(filename):
 
 
 def needs_rotation(filename):
-    """True when the display matrix asks for a 90/270 degree turn."""
     return display_rotation(filename) % 180 != 0
 
 
 def normalize(filename, suffix="_rotated"):
-    """Bake the display matrix into pixels and return the new file path.
-
-    ffmpeg applies exactly the matrix a normal player would, which keeps the
-    orientation correct without re-implementing the rotation sign convention.
-    """
     base, _ = os.path.splitext(filename)
     out = base + suffix + ".mp4"
     cmd = [
