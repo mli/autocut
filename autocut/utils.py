@@ -18,7 +18,9 @@ def load_audio(file: str, sr: int = 16000) -> np.ndarray:
     except ffmpeg.Error as e:
         raise RuntimeError(f"Failed to load audio: {e.stderr.decode()}") from e
 
-    return np.frombuffer(out, np.int16).flatten().astype(np.float32) / 32768.0
+    audio = np.frombuffer(out, np.int16).astype(np.float32)
+    audio /= 32768.0
+    return audio
 
 
 def is_video(filename):
